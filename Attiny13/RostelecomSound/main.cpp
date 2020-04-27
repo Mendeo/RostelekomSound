@@ -41,7 +41,7 @@ volatile bool _muteOffFire = false;
 
 uint8_t _volumeLevel = 0;
 
-volatile unsigned long _timer = 0; //1 us = _timer * (256 * 1E6 / F_CPU). Для нашего случая частота контроллера 9,6 МГц, Значит один инкремент переменной _timer случается примерно раз в 26,67 микросекунды.
+volatile unsigned long _timer = 0; //Для нашего случая частота контроллера 9,6 МГц, Значит один инкремент переменной _timer случается примерно раз в 26,67 микросекунды.
 
 ISR(TIM0_OVF_vect)
 {
@@ -74,7 +74,8 @@ inline unsigned long getExpectedTime(uint8_t data, uint8_t counter) //В зависимо
 bool incrementCounter(uint8_t data, volatile uint8_t *counter) //Увеличиваем счётчик, если приняли сигнал, который соответствует следующему значению в нашем паттерне (data). Если паттерн получен полностью, то возвращаем true.
 {
 	uint8_t PIN_STATUS = !!(PORTB & (1 << INT0)); //Аналог digitalRead на ардуино.
-	if ((PIN_STATUS ^ (*counter % 2)) && _pulseDuration >= getExpectedTime(data, *counter) - ERROR_VALUE && _pulseDuration <= getExpectedTime(data, *counter) + ERROR_VALUE)
+	unsigned long eTime = getExpectedTime(data, *counter);
+	if ((PIN_STATUS ^ (*counter % 2)) && _pulseDuration >= eTime - ERROR_VALUE && _pulseDuration <= eTime + ERROR_VALUE)
 	{
 		(*counter)++;
 	}
@@ -120,61 +121,74 @@ ISR(INT0_vect)
 	}
 }
 
+inline void doIncrement()
+{
+	PORTB &= ~(1 << CONTROL_PIN);
+	_delay_ms(1);
+	PORTB |= (1 << CONTROL_PIN);
+	_delay_ms(1);
+}
+
 int main(void)
 {
-    DDRB = (1 << LED_PIN) | (1 << SELECTOR_PIN) | (1 << CONTROL_PIN); //Включаем LED_PIN, SELECTOR_PIN и CONTROL_PIN на выход, остальные на вход.
+	DDRB = (1 << LED_PIN) | (1 << SELECTOR_PIN) | (1 << CONTROL_PIN); //Включаем LED_PIN, SELECTOR_PIN и CONTROL_PIN на выход, остальные на вход.
 	GIMSK = (1 << INT0); //Настраиваем прерывание на INT0 (PB1).
 	//Настраиваем прерывание по изменению уровня.
 	MCUCR |= (1 << ISC00);
 	MCUCR &= ~(1 << ISC01);	
 	TIMSK0 = (1 << TOIE0); //Настраиваем прерывание по переполнению регистра таймера TCNT0.
+	TCCR0B = (1 << CS00); //Настраиваем таймер на работу без делителя частоты.
 	//Выставляем начальные значения пинов управления потенциометрами.
-	PORTB &= ~(1 << SELECTOR_PIN) & ~(1 << CONTROL_PIN);
+	PORTB &= ~(1 << SELECTOR_PIN);
+	PORTB |= (1 << CONTROL_PIN);
 	sei(); //Разрешаем прерывания.
 	bool isMute = false;
-    while (true) 
-    {
+	PORTB |= (1 << LED_PIN);
+	while (true) 
+	{
+		if (_timer % 150000 == 0)
+		{
+			PORTB ^= (1 << LED_PIN);
+		}
 		if (_upFire && !isMute)
 		{
+			cli();
 			_upFire = false;			
 			PORTB |= (1 << SELECTOR_PIN);
-			PORTB |= (1 << CONTROL_PIN);
-			_delay_ms(1);
-			PORTB &= ~(1 << CONTROL_PIN);
-			_delay_ms(1);
+			doIncrement();
 			_volumeLevel++;
+			sei();
 		}
 		else if (_downFire && !isMute)
 		{
+			cli();
 			_downFire = false;
 			PORTB &= ~(1 << SELECTOR_PIN);
-			PORTB |= (1 << CONTROL_PIN);
-			_delay_ms(1);
-			PORTB &= ~(1 << CONTROL_PIN);
-			_delay_ms(1);
-			_volumeLevel++;
+			doIncrement();
+			_volumeLevel--;
+			sei();
 		}
 		else if (_muteOnFire && !isMute)
 		{
+			cli();
+			isMute = true;
 			PORTB &= ~(1 << SELECTOR_PIN);
 			for (uint8_t i = _volumeLevel; i > 0; i--)
 			{
-				PORTB |= (1 << CONTROL_PIN);
-				_delay_ms(1);
-				PORTB &= ~(1 << CONTROL_PIN);
-				_delay_ms(1);
+				doIncrement();
 			}
+			sei();
 		}
 		else if (_muteOffFire && isMute)
 		{
+			cli();
+			isMute = false;
 			PORTB |= (1 << SELECTOR_PIN);
 			for (uint8_t i = 0; i < _volumeLevel; i++)
 			{
-				PORTB |= (1 << CONTROL_PIN);
-				_delay_ms(1);
-				PORTB &= ~(1 << CONTROL_PIN);
-				_delay_ms(1);
+				doIncrement();
 			}
+			sei();
 		}
-    }
+	}
 }
