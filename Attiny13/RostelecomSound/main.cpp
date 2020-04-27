@@ -24,6 +24,7 @@
 
 #include <avr/io.h>
 #include <avr/interrupt.h>
+#include <util/delay.h>
 
 volatile unsigned long _RXPreviousTime = 0;
 volatile unsigned long _pulseDuration = 0;
@@ -38,6 +39,8 @@ volatile bool _downFire = false;
 volatile bool _muteOnFire = false;
 volatile bool _muteOffFire = false;
 
+uint8_t _volumeLevel = 0;
+
 volatile unsigned long _timer = 0; //1 us = _timer * (256 * 1E6 / F_CPU). Для нашего случая частота контроллера 9,6 МГц, Значит один инкремент переменной _timer случается примерно раз в 26,67 микросекунды.
 
 ISR(TIM0_OVF_vect)
@@ -45,9 +48,8 @@ ISR(TIM0_OVF_vect)
 	_timer++;
 }
 
-unsigned long getExpectedTime(uint8_t data, uint8_t counter) //В зависимости от значения счётчика и паттерна (data) определяем какой длительности должен быть сигнал.
+inline unsigned long getExpectedTime(uint8_t data, uint8_t counter) //В зависимости от значения счётчика и паттерна (data) определяем какой длительности должен быть сигнал.
 {
-	if (counter <= 1 || (counter >= 5 && counter <= 14) || counter == 18 || counter == 19 || counter == 22) return SHORT_TIME;
 	uint8_t index;
 	if (counter >= 2 && counter <= 4)
 	{
@@ -57,9 +59,13 @@ unsigned long getExpectedTime(uint8_t data, uint8_t counter) //В зависимости от 
 	{
 		index = counter - 15;
 	}
-	else
+	else if (counter >= 20 && counter <= 21)
 	{
 		index = counter - 20;
+	}
+	else
+	{
+		return SHORT_TIME;
 	}
 	if (data & (1 << index)) return LONG_TIME;
 	return SHORT_TIME;
@@ -88,10 +94,30 @@ ISR(INT0_vect)
 {
 	_pulseDuration = _timer - _RXPreviousTime;
 	_RXPreviousTime = _timer;
-	if (incrementCounter(UP1_DATA, &_up1Counter) || incrementCounter(UP2_DATA, &_up2Counter)) _upFire = true;
-	if (incrementCounter(DOWN1_DATA, &_down1Counter) || incrementCounter(DOWN2_DATA, &_down2Counter)) _downFire = true;
-	if (incrementCounter(MUTE_ON_DATA, &_muteOnCounter)) _muteOnFire = true;
-	if (incrementCounter(MUTE_OFF_DATA, &_muteOffCounter)) _muteOffFire = true;
+	if (incrementCounter(UP1_DATA, &_up1Counter))
+	{
+		_upFire = true;
+	}
+	else if (incrementCounter(UP2_DATA, &_up2Counter))
+	{
+		_upFire = true;
+	}
+	else if (incrementCounter(DOWN1_DATA, &_down1Counter))
+	{
+		_downFire = true;
+	}
+	else if (incrementCounter(DOWN2_DATA, &_down2Counter))
+	{
+		_downFire = true;
+	}
+	else if (incrementCounter(MUTE_ON_DATA, &_muteOnCounter))
+	{
+		_muteOnFire = true;
+	}
+	else if (incrementCounter(MUTE_OFF_DATA, &_muteOffCounter))
+	{
+		_muteOffFire = true;
+	}
 }
 
 int main(void)
@@ -102,9 +128,53 @@ int main(void)
 	MCUCR |= (1 << ISC00);
 	MCUCR &= ~(1 << ISC01);	
 	TIMSK0 = (1 << TOIE0); //Настраиваем прерывание по переполнению регистра таймера TCNT0.
+	//Выставляем начальные значения пинов управления потенциометрами.
+	PORTB &= ~(1 << SELECTOR_PIN) & ~(1 << CONTROL_PIN);
 	sei(); //Разрешаем прерывания.
+	bool isMute = false;
     while (true) 
     {
-		
+		if (_upFire && !isMute)
+		{
+			_upFire = false;			
+			PORTB |= (1 << SELECTOR_PIN);
+			PORTB |= (1 << CONTROL_PIN);
+			_delay_ms(1);
+			PORTB &= ~(1 << CONTROL_PIN);
+			_delay_ms(1);
+			_volumeLevel++;
+		}
+		else if (_downFire && !isMute)
+		{
+			_downFire = false;
+			PORTB &= ~(1 << SELECTOR_PIN);
+			PORTB |= (1 << CONTROL_PIN);
+			_delay_ms(1);
+			PORTB &= ~(1 << CONTROL_PIN);
+			_delay_ms(1);
+			_volumeLevel++;
+		}
+		else if (_muteOnFire && !isMute)
+		{
+			PORTB &= ~(1 << SELECTOR_PIN);
+			for (uint8_t i = _volumeLevel; i > 0; i--)
+			{
+				PORTB |= (1 << CONTROL_PIN);
+				_delay_ms(1);
+				PORTB &= ~(1 << CONTROL_PIN);
+				_delay_ms(1);
+			}
+		}
+		else if (_muteOffFire && isMute)
+		{
+			PORTB |= (1 << SELECTOR_PIN);
+			for (uint8_t i = 0; i < _volumeLevel; i++)
+			{
+				PORTB |= (1 << CONTROL_PIN);
+				_delay_ms(1);
+				PORTB &= ~(1 << CONTROL_PIN);
+				_delay_ms(1);
+			}
+		}
     }
 }
