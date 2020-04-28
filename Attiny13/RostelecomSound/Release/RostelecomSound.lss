@@ -3,13 +3,13 @@ RostelecomSound.elf:     file format elf32-avr
 
 Sections:
 Idx Name          Size      VMA       LMA       File off  Algn
-  0 .text         00000308  00000000  00000000  00000074  2**1
+  0 .text         00000306  00000000  00000000  00000074  2**1
                   CONTENTS, ALLOC, LOAD, READONLY, CODE
-  1 .data         00000000  00800060  00800060  0000037c  2**0
+  1 .data         00000000  00800060  00800060  0000037a  2**0
                   CONTENTS, ALLOC, LOAD, DATA
-  2 .bss          00000018  00800060  00800060  0000037c  2**0
+  2 .bss          00000018  00800060  00800060  0000037a  2**0
                   ALLOC
-  3 .comment      00000030  00000000  00000000  0000037c  2**0
+  3 .comment      00000030  00000000  00000000  0000037a  2**0
                   CONTENTS, READONLY
   4 .note.gnu.avr.deviceinfo 0000003c  00000000  00000000  000003ac  2**2
                   CONTENTS, READONLY
@@ -55,8 +55,8 @@ Disassembly of section .text:
   26:	a8 37       	cpi	r26, 0x78	; 120
   28:	b2 07       	cpc	r27, r18
   2a:	e1 f7       	brne	.-8      	; 0x24 <.do_clear_bss_loop>
-  2c:	e2 d0       	rcall	.+452    	; 0x1f2 <main>
-  2e:	6a c1       	rjmp	.+724    	; 0x304 <_exit>
+  2c:	e1 d0       	rcall	.+450    	; 0x1f0 <main>
+  2e:	69 c1       	rjmp	.+722    	; 0x302 <_exit>
 
 00000030 <__bad_interrupt>:
   30:	e7 cf       	rjmp	.-50     	; 0x0 <__vectors>
@@ -71,17 +71,17 @@ Disassembly of section .text:
   3e:	9f 93       	push	r25
   40:	af 93       	push	r26
   42:	bf 93       	push	r27
-  44:	80 91 60 00 	lds	r24, 0x0060	; 0x800060 <__DATA_REGION_ORIGIN__>
-  48:	90 91 61 00 	lds	r25, 0x0061	; 0x800061 <__DATA_REGION_ORIGIN__+0x1>
-  4c:	a0 91 62 00 	lds	r26, 0x0062	; 0x800062 <__DATA_REGION_ORIGIN__+0x2>
-  50:	b0 91 63 00 	lds	r27, 0x0063	; 0x800063 <__DATA_REGION_ORIGIN__+0x3>
+  44:	80 91 60 00 	lds	r24, 0x0060	; 0x800060 <_edata>
+  48:	90 91 61 00 	lds	r25, 0x0061	; 0x800061 <_edata+0x1>
+  4c:	a0 91 62 00 	lds	r26, 0x0062	; 0x800062 <_edata+0x2>
+  50:	b0 91 63 00 	lds	r27, 0x0063	; 0x800063 <_edata+0x3>
   54:	01 96       	adiw	r24, 0x01	; 1
   56:	a1 1d       	adc	r26, r1
   58:	b1 1d       	adc	r27, r1
-  5a:	80 93 60 00 	sts	0x0060, r24	; 0x800060 <__DATA_REGION_ORIGIN__>
-  5e:	90 93 61 00 	sts	0x0061, r25	; 0x800061 <__DATA_REGION_ORIGIN__+0x1>
-  62:	a0 93 62 00 	sts	0x0062, r26	; 0x800062 <__DATA_REGION_ORIGIN__+0x2>
-  66:	b0 93 63 00 	sts	0x0063, r27	; 0x800063 <__DATA_REGION_ORIGIN__+0x3>
+  5a:	80 93 60 00 	sts	0x0060, r24	; 0x800060 <_edata>
+  5e:	90 93 61 00 	sts	0x0061, r25	; 0x800061 <_edata+0x1>
+  62:	a0 93 62 00 	sts	0x0062, r26	; 0x800062 <_edata+0x2>
+  66:	b0 93 63 00 	sts	0x0063, r27	; 0x800063 <_edata+0x3>
   6a:	bf 91       	pop	r27
   6c:	af 91       	pop	r26
   6e:	9f 91       	pop	r25
@@ -106,10 +106,10 @@ Disassembly of section .text:
   90:	9f 93       	push	r25
   92:	af 93       	push	r26
   94:	bf 93       	push	r27
-  96:	80 91 60 00 	lds	r24, 0x0060	; 0x800060 <__DATA_REGION_ORIGIN__>
-  9a:	90 91 61 00 	lds	r25, 0x0061	; 0x800061 <__DATA_REGION_ORIGIN__+0x1>
-  9e:	a0 91 62 00 	lds	r26, 0x0062	; 0x800062 <__DATA_REGION_ORIGIN__+0x2>
-  a2:	b0 91 63 00 	lds	r27, 0x0063	; 0x800063 <__DATA_REGION_ORIGIN__+0x3>
+  96:	80 91 60 00 	lds	r24, 0x0060	; 0x800060 <_edata>
+  9a:	90 91 61 00 	lds	r25, 0x0061	; 0x800061 <_edata+0x1>
+  9e:	a0 91 62 00 	lds	r26, 0x0062	; 0x800062 <_edata+0x2>
+  a2:	b0 91 63 00 	lds	r27, 0x0063	; 0x800063 <_edata+0x3>
   a6:	40 91 74 00 	lds	r20, 0x0074	; 0x800074 <_RXPreviousTime>
   aa:	50 91 75 00 	lds	r21, 0x0075	; 0x800075 <_RXPreviousTime+0x1>
   ae:	60 91 76 00 	lds	r22, 0x0076	; 0x800076 <_RXPreviousTime+0x2>
@@ -122,10 +122,10 @@ Disassembly of section .text:
   c2:	90 93 71 00 	sts	0x0071, r25	; 0x800071 <_pulseDuration+0x1>
   c6:	a0 93 72 00 	sts	0x0072, r26	; 0x800072 <_pulseDuration+0x2>
   ca:	b0 93 73 00 	sts	0x0073, r27	; 0x800073 <_pulseDuration+0x3>
-  ce:	80 91 60 00 	lds	r24, 0x0060	; 0x800060 <__DATA_REGION_ORIGIN__>
-  d2:	90 91 61 00 	lds	r25, 0x0061	; 0x800061 <__DATA_REGION_ORIGIN__+0x1>
-  d6:	a0 91 62 00 	lds	r26, 0x0062	; 0x800062 <__DATA_REGION_ORIGIN__+0x2>
-  da:	b0 91 63 00 	lds	r27, 0x0063	; 0x800063 <__DATA_REGION_ORIGIN__+0x3>
+  ce:	80 91 60 00 	lds	r24, 0x0060	; 0x800060 <_edata>
+  d2:	90 91 61 00 	lds	r25, 0x0061	; 0x800061 <_edata+0x1>
+  d6:	a0 91 62 00 	lds	r26, 0x0062	; 0x800062 <_edata+0x2>
+  da:	b0 91 63 00 	lds	r27, 0x0063	; 0x800063 <_edata+0x3>
   de:	80 93 74 00 	sts	0x0074, r24	; 0x800074 <_RXPreviousTime>
   e2:	90 93 75 00 	sts	0x0075, r25	; 0x800075 <_RXPreviousTime+0x1>
   e6:	a0 93 76 00 	sts	0x0076, r26	; 0x800076 <_RXPreviousTime+0x2>
@@ -177,13 +177,13 @@ Disassembly of section .text:
  144:	e2 f7       	brpl	.-8      	; 0x13e <_Z16incrementCounterhPVh+0x30>
  146:	a0 ff       	sbrs	r26, 0
  148:	05 c0       	rjmp	.+10     	; 0x154 <_Z16incrementCounterhPVh+0x46>
- 14a:	88 ec       	ldi	r24, 0xC8	; 200
- 14c:	9f ea       	ldi	r25, 0xAF	; 175
+ 14a:	82 e4       	ldi	r24, 0x42	; 66
+ 14c:	90 e0       	ldi	r25, 0x00	; 0
  14e:	a0 e0       	ldi	r26, 0x00	; 0
  150:	b0 e0       	ldi	r27, 0x00	; 0
  152:	04 c0       	rjmp	.+8      	; 0x15c <_Z16incrementCounterhPVh+0x4e>
- 154:	80 ec       	ldi	r24, 0xC0	; 192
- 156:	9d e5       	ldi	r25, 0x5D	; 93
+ 154:	81 e2       	ldi	r24, 0x21	; 33
+ 156:	90 e0       	ldi	r25, 0x00	; 0
  158:	a0 e0       	ldi	r26, 0x00	; 0
  15a:	b0 e0       	ldi	r27, 0x00	; 0
  15c:	60 81       	ld	r22, Z
@@ -193,193 +193,192 @@ Disassembly of section .text:
  164:	50 e0       	ldi	r21, 0x00	; 0
  166:	24 17       	cp	r18, r20
  168:	35 07       	cpc	r19, r21
- 16a:	79 f1       	breq	.+94     	; 0x1ca <_Z16incrementCounterhPVh+0xbc>
+ 16a:	71 f1       	breq	.+92     	; 0x1c8 <_Z16incrementCounterhPVh+0xba>
  16c:	40 91 70 00 	lds	r20, 0x0070	; 0x800070 <_pulseDuration>
  170:	50 91 71 00 	lds	r21, 0x0071	; 0x800071 <_pulseDuration+0x1>
  174:	60 91 72 00 	lds	r22, 0x0072	; 0x800072 <_pulseDuration+0x2>
  178:	70 91 73 00 	lds	r23, 0x0073	; 0x800073 <_pulseDuration+0x3>
  17c:	8c 01       	movw	r16, r24
  17e:	9d 01       	movw	r18, r26
- 180:	00 5a       	subi	r16, 0xA0	; 160
- 182:	18 42       	sbci	r17, 0x28	; 40
+ 180:	00 51       	subi	r16, 0x10	; 16
+ 182:	11 09       	sbc	r17, r1
  184:	21 09       	sbc	r18, r1
  186:	31 09       	sbc	r19, r1
  188:	40 17       	cp	r20, r16
  18a:	51 07       	cpc	r21, r17
  18c:	62 07       	cpc	r22, r18
  18e:	73 07       	cpc	r23, r19
- 190:	e0 f0       	brcs	.+56     	; 0x1ca <_Z16incrementCounterhPVh+0xbc>
+ 190:	d8 f0       	brcs	.+54     	; 0x1c8 <_Z16incrementCounterhPVh+0xba>
  192:	40 91 70 00 	lds	r20, 0x0070	; 0x800070 <_pulseDuration>
  196:	50 91 71 00 	lds	r21, 0x0071	; 0x800071 <_pulseDuration+0x1>
  19a:	60 91 72 00 	lds	r22, 0x0072	; 0x800072 <_pulseDuration+0x2>
  19e:	70 91 73 00 	lds	r23, 0x0073	; 0x800073 <_pulseDuration+0x3>
- 1a2:	80 56       	subi	r24, 0x60	; 96
- 1a4:	97 4d       	sbci	r25, 0xD7	; 215
- 1a6:	af 4f       	sbci	r26, 0xFF	; 255
- 1a8:	bf 4f       	sbci	r27, 0xFF	; 255
- 1aa:	84 17       	cp	r24, r20
- 1ac:	95 07       	cpc	r25, r21
- 1ae:	a6 07       	cpc	r26, r22
- 1b0:	b7 07       	cpc	r27, r23
- 1b2:	58 f0       	brcs	.+22     	; 0x1ca <_Z16incrementCounterhPVh+0xbc>
- 1b4:	80 81       	ld	r24, Z
- 1b6:	8f 5f       	subi	r24, 0xFF	; 255
- 1b8:	80 83       	st	Z, r24
- 1ba:	80 81       	ld	r24, Z
- 1bc:	87 31       	cpi	r24, 0x17	; 23
- 1be:	19 f4       	brne	.+6      	; 0x1c6 <_Z16incrementCounterhPVh+0xb8>
- 1c0:	10 82       	st	Z, r1
- 1c2:	81 e0       	ldi	r24, 0x01	; 1
- 1c4:	04 c0       	rjmp	.+8      	; 0x1ce <_Z16incrementCounterhPVh+0xc0>
- 1c6:	80 e0       	ldi	r24, 0x00	; 0
- 1c8:	02 c0       	rjmp	.+4      	; 0x1ce <_Z16incrementCounterhPVh+0xc0>
- 1ca:	10 82       	st	Z, r1
- 1cc:	f6 cf       	rjmp	.-20     	; 0x1ba <_Z16incrementCounterhPVh+0xac>
- 1ce:	1f 91       	pop	r17
- 1d0:	0f 91       	pop	r16
- 1d2:	08 95       	ret
+ 1a2:	40 96       	adiw	r24, 0x10	; 16
+ 1a4:	a1 1d       	adc	r26, r1
+ 1a6:	b1 1d       	adc	r27, r1
+ 1a8:	84 17       	cp	r24, r20
+ 1aa:	95 07       	cpc	r25, r21
+ 1ac:	a6 07       	cpc	r26, r22
+ 1ae:	b7 07       	cpc	r27, r23
+ 1b0:	58 f0       	brcs	.+22     	; 0x1c8 <_Z16incrementCounterhPVh+0xba>
+ 1b2:	80 81       	ld	r24, Z
+ 1b4:	8f 5f       	subi	r24, 0xFF	; 255
+ 1b6:	80 83       	st	Z, r24
+ 1b8:	80 81       	ld	r24, Z
+ 1ba:	87 31       	cpi	r24, 0x17	; 23
+ 1bc:	19 f4       	brne	.+6      	; 0x1c4 <_Z16incrementCounterhPVh+0xb6>
+ 1be:	10 82       	st	Z, r1
+ 1c0:	81 e0       	ldi	r24, 0x01	; 1
+ 1c2:	04 c0       	rjmp	.+8      	; 0x1cc <_Z16incrementCounterhPVh+0xbe>
+ 1c4:	80 e0       	ldi	r24, 0x00	; 0
+ 1c6:	02 c0       	rjmp	.+4      	; 0x1cc <_Z16incrementCounterhPVh+0xbe>
+ 1c8:	10 82       	st	Z, r1
+ 1ca:	f6 cf       	rjmp	.-20     	; 0x1b8 <_Z16incrementCounterhPVh+0xaa>
+ 1cc:	1f 91       	pop	r17
+ 1ce:	0f 91       	pop	r16
+ 1d0:	08 95       	ret
 
-000001d4 <_Z11doIncrementv>:
- 1d4:	c3 98       	cbi	0x18, 3	; 24
- 1d6:	8f e5       	ldi	r24, 0x5F	; 95
- 1d8:	99 e0       	ldi	r25, 0x09	; 9
- 1da:	01 97       	sbiw	r24, 0x01	; 1
- 1dc:	f1 f7       	brne	.-4      	; 0x1da <_Z11doIncrementv+0x6>
- 1de:	00 c0       	rjmp	.+0      	; 0x1e0 <_Z11doIncrementv+0xc>
- 1e0:	00 00       	nop
- 1e2:	c3 9a       	sbi	0x18, 3	; 24
- 1e4:	8f e5       	ldi	r24, 0x5F	; 95
- 1e6:	99 e0       	ldi	r25, 0x09	; 9
- 1e8:	01 97       	sbiw	r24, 0x01	; 1
- 1ea:	f1 f7       	brne	.-4      	; 0x1e8 <_Z11doIncrementv+0x14>
- 1ec:	00 c0       	rjmp	.+0      	; 0x1ee <_Z11doIncrementv+0x1a>
- 1ee:	00 00       	nop
- 1f0:	08 95       	ret
+000001d2 <_Z11doIncrementv>:
+ 1d2:	c3 98       	cbi	0x18, 3	; 24
+ 1d4:	8f e5       	ldi	r24, 0x5F	; 95
+ 1d6:	99 e0       	ldi	r25, 0x09	; 9
+ 1d8:	01 97       	sbiw	r24, 0x01	; 1
+ 1da:	f1 f7       	brne	.-4      	; 0x1d8 <_Z11doIncrementv+0x6>
+ 1dc:	00 c0       	rjmp	.+0      	; 0x1de <_Z11doIncrementv+0xc>
+ 1de:	00 00       	nop
+ 1e0:	c3 9a       	sbi	0x18, 3	; 24
+ 1e2:	8f e5       	ldi	r24, 0x5F	; 95
+ 1e4:	99 e0       	ldi	r25, 0x09	; 9
+ 1e6:	01 97       	sbiw	r24, 0x01	; 1
+ 1e8:	f1 f7       	brne	.-4      	; 0x1e6 <_Z11doIncrementv+0x14>
+ 1ea:	00 c0       	rjmp	.+0      	; 0x1ec <_Z11doIncrementv+0x1a>
+ 1ec:	00 00       	nop
+ 1ee:	08 95       	ret
 
-000001f2 <main>:
- 1f2:	8d e0       	ldi	r24, 0x0D	; 13
- 1f4:	87 bb       	out	0x17, r24	; 23
- 1f6:	80 e4       	ldi	r24, 0x40	; 64
- 1f8:	8b bf       	out	0x3b, r24	; 59
- 1fa:	85 b7       	in	r24, 0x35	; 53
- 1fc:	81 60       	ori	r24, 0x01	; 1
- 1fe:	85 bf       	out	0x35, r24	; 53
- 200:	85 b7       	in	r24, 0x35	; 53
- 202:	8d 7f       	andi	r24, 0xFD	; 253
- 204:	85 bf       	out	0x35, r24	; 53
- 206:	82 e0       	ldi	r24, 0x02	; 2
- 208:	89 bf       	out	0x39, r24	; 57
- 20a:	81 e0       	ldi	r24, 0x01	; 1
- 20c:	83 bf       	out	0x33, r24	; 51
- 20e:	c2 98       	cbi	0x18, 2	; 24
- 210:	c3 9a       	sbi	0x18, 3	; 24
- 212:	78 94       	sei
- 214:	c0 9a       	sbi	0x18, 0	; 24
- 216:	c0 e0       	ldi	r28, 0x00	; 0
- 218:	d1 e0       	ldi	r29, 0x01	; 1
- 21a:	80 91 6f 00 	lds	r24, 0x006F	; 0x80006f <_hasPulse>
- 21e:	88 23       	and	r24, r24
- 220:	e1 f3       	breq	.-8      	; 0x21a <main+0x28>
- 222:	f8 94       	cli
- 224:	10 92 6f 00 	sts	0x006F, r1	; 0x80006f <_hasPulse>
- 228:	6e e6       	ldi	r22, 0x6E	; 110
- 22a:	70 e0       	ldi	r23, 0x00	; 0
- 22c:	89 e1       	ldi	r24, 0x19	; 25
- 22e:	6f df       	rcall	.-290    	; 0x10e <_Z16incrementCounterhPVh>
- 230:	88 23       	and	r24, r24
- 232:	19 f0       	breq	.+6      	; 0x23a <main+0x48>
- 234:	d0 93 68 00 	sts	0x0068, r29	; 0x800068 <_upFire>
- 238:	25 c0       	rjmp	.+74     	; 0x284 <main+0x92>
- 23a:	6d e6       	ldi	r22, 0x6D	; 109
- 23c:	70 e0       	ldi	r23, 0x00	; 0
- 23e:	8c e1       	ldi	r24, 0x1C	; 28
- 240:	66 df       	rcall	.-308    	; 0x10e <_Z16incrementCounterhPVh>
- 242:	81 11       	cpse	r24, r1
- 244:	f7 cf       	rjmp	.-18     	; 0x234 <main+0x42>
- 246:	6c e6       	ldi	r22, 0x6C	; 108
- 248:	70 e0       	ldi	r23, 0x00	; 0
- 24a:	8c e9       	ldi	r24, 0x9C	; 156
- 24c:	60 df       	rcall	.-320    	; 0x10e <_Z16incrementCounterhPVh>
- 24e:	88 23       	and	r24, r24
- 250:	19 f0       	breq	.+6      	; 0x258 <main+0x66>
- 252:	d0 93 67 00 	sts	0x0067, r29	; 0x800067 <_downFire>
- 256:	16 c0       	rjmp	.+44     	; 0x284 <main+0x92>
- 258:	6b e6       	ldi	r22, 0x6B	; 107
- 25a:	70 e0       	ldi	r23, 0x00	; 0
- 25c:	89 e9       	ldi	r24, 0x99	; 153
- 25e:	57 df       	rcall	.-338    	; 0x10e <_Z16incrementCounterhPVh>
- 260:	81 11       	cpse	r24, r1
- 262:	f7 cf       	rjmp	.-18     	; 0x252 <main+0x60>
- 264:	6a e6       	ldi	r22, 0x6A	; 106
- 266:	70 e0       	ldi	r23, 0x00	; 0
- 268:	84 ee       	ldi	r24, 0xE4	; 228
- 26a:	51 df       	rcall	.-350    	; 0x10e <_Z16incrementCounterhPVh>
- 26c:	88 23       	and	r24, r24
- 26e:	19 f0       	breq	.+6      	; 0x276 <main+0x84>
- 270:	d0 93 66 00 	sts	0x0066, r29	; 0x800066 <_muteOnFire>
- 274:	07 c0       	rjmp	.+14     	; 0x284 <main+0x92>
- 276:	69 e6       	ldi	r22, 0x69	; 105
- 278:	70 e0       	ldi	r23, 0x00	; 0
- 27a:	81 ee       	ldi	r24, 0xE1	; 225
- 27c:	48 df       	rcall	.-368    	; 0x10e <_Z16incrementCounterhPVh>
- 27e:	81 11       	cpse	r24, r1
- 280:	d0 93 65 00 	sts	0x0065, r29	; 0x800065 <_muteOffFire>
- 284:	80 91 68 00 	lds	r24, 0x0068	; 0x800068 <_upFire>
- 288:	88 23       	and	r24, r24
- 28a:	51 f0       	breq	.+20     	; 0x2a0 <main+0xae>
- 28c:	c1 11       	cpse	r28, r1
- 28e:	08 c0       	rjmp	.+16     	; 0x2a0 <main+0xae>
- 290:	10 92 68 00 	sts	0x0068, r1	; 0x800068 <_upFire>
- 294:	c2 9a       	sbi	0x18, 2	; 24
- 296:	9e df       	rcall	.-196    	; 0x1d4 <_Z11doIncrementv>
- 298:	80 91 64 00 	lds	r24, 0x0064	; 0x800064 <_volumeLevel>
- 29c:	8f 5f       	subi	r24, 0xFF	; 255
- 29e:	0d c0       	rjmp	.+26     	; 0x2ba <main+0xc8>
- 2a0:	80 91 67 00 	lds	r24, 0x0067	; 0x800067 <_downFire>
- 2a4:	88 23       	and	r24, r24
- 2a6:	61 f0       	breq	.+24     	; 0x2c0 <main+0xce>
- 2a8:	c1 11       	cpse	r28, r1
- 2aa:	0a c0       	rjmp	.+20     	; 0x2c0 <main+0xce>
- 2ac:	10 92 67 00 	sts	0x0067, r1	; 0x800067 <_downFire>
- 2b0:	c2 98       	cbi	0x18, 2	; 24
- 2b2:	90 df       	rcall	.-224    	; 0x1d4 <_Z11doIncrementv>
- 2b4:	80 91 64 00 	lds	r24, 0x0064	; 0x800064 <_volumeLevel>
- 2b8:	81 50       	subi	r24, 0x01	; 1
- 2ba:	80 93 64 00 	sts	0x0064, r24	; 0x800064 <_volumeLevel>
- 2be:	20 c0       	rjmp	.+64     	; 0x300 <main+0x10e>
- 2c0:	80 91 66 00 	lds	r24, 0x0066	; 0x800066 <_muteOnFire>
- 2c4:	88 23       	and	r24, r24
- 2c6:	51 f0       	breq	.+20     	; 0x2dc <main+0xea>
- 2c8:	c1 11       	cpse	r28, r1
- 2ca:	08 c0       	rjmp	.+16     	; 0x2dc <main+0xea>
- 2cc:	c2 98       	cbi	0x18, 2	; 24
- 2ce:	c0 91 64 00 	lds	r28, 0x0064	; 0x800064 <_volumeLevel>
- 2d2:	cc 23       	and	r28, r28
- 2d4:	a1 f0       	breq	.+40     	; 0x2fe <main+0x10c>
- 2d6:	7e df       	rcall	.-260    	; 0x1d4 <_Z11doIncrementv>
- 2d8:	c1 50       	subi	r28, 0x01	; 1
- 2da:	fb cf       	rjmp	.-10     	; 0x2d2 <main+0xe0>
- 2dc:	80 91 65 00 	lds	r24, 0x0065	; 0x800065 <_muteOffFire>
- 2e0:	88 23       	and	r24, r24
- 2e2:	71 f0       	breq	.+28     	; 0x300 <main+0x10e>
- 2e4:	c1 11       	cpse	r28, r1
- 2e6:	02 c0       	rjmp	.+4      	; 0x2ec <main+0xfa>
- 2e8:	c0 e0       	ldi	r28, 0x00	; 0
- 2ea:	0a c0       	rjmp	.+20     	; 0x300 <main+0x10e>
- 2ec:	c2 9a       	sbi	0x18, 2	; 24
- 2ee:	c0 e0       	ldi	r28, 0x00	; 0
- 2f0:	80 91 64 00 	lds	r24, 0x0064	; 0x800064 <_volumeLevel>
- 2f4:	c8 17       	cp	r28, r24
- 2f6:	c0 f7       	brcc	.-16     	; 0x2e8 <main+0xf6>
- 2f8:	6d df       	rcall	.-294    	; 0x1d4 <_Z11doIncrementv>
- 2fa:	cf 5f       	subi	r28, 0xFF	; 255
- 2fc:	f9 cf       	rjmp	.-14     	; 0x2f0 <main+0xfe>
- 2fe:	c1 e0       	ldi	r28, 0x01	; 1
- 300:	78 94       	sei
- 302:	8b cf       	rjmp	.-234    	; 0x21a <main+0x28>
+000001f0 <main>:
+ 1f0:	8d e0       	ldi	r24, 0x0D	; 13
+ 1f2:	87 bb       	out	0x17, r24	; 23
+ 1f4:	80 e4       	ldi	r24, 0x40	; 64
+ 1f6:	8b bf       	out	0x3b, r24	; 59
+ 1f8:	85 b7       	in	r24, 0x35	; 53
+ 1fa:	81 60       	ori	r24, 0x01	; 1
+ 1fc:	85 bf       	out	0x35, r24	; 53
+ 1fe:	85 b7       	in	r24, 0x35	; 53
+ 200:	8d 7f       	andi	r24, 0xFD	; 253
+ 202:	85 bf       	out	0x35, r24	; 53
+ 204:	82 e0       	ldi	r24, 0x02	; 2
+ 206:	89 bf       	out	0x39, r24	; 57
+ 208:	81 e0       	ldi	r24, 0x01	; 1
+ 20a:	83 bf       	out	0x33, r24	; 51
+ 20c:	c2 98       	cbi	0x18, 2	; 24
+ 20e:	c3 9a       	sbi	0x18, 3	; 24
+ 210:	78 94       	sei
+ 212:	c0 9a       	sbi	0x18, 0	; 24
+ 214:	c0 e0       	ldi	r28, 0x00	; 0
+ 216:	d1 e0       	ldi	r29, 0x01	; 1
+ 218:	80 91 6f 00 	lds	r24, 0x006F	; 0x80006f <_hasPulse>
+ 21c:	88 23       	and	r24, r24
+ 21e:	e1 f3       	breq	.-8      	; 0x218 <main+0x28>
+ 220:	f8 94       	cli
+ 222:	10 92 6f 00 	sts	0x006F, r1	; 0x80006f <_hasPulse>
+ 226:	6e e6       	ldi	r22, 0x6E	; 110
+ 228:	70 e0       	ldi	r23, 0x00	; 0
+ 22a:	89 e1       	ldi	r24, 0x19	; 25
+ 22c:	70 df       	rcall	.-288    	; 0x10e <_Z16incrementCounterhPVh>
+ 22e:	88 23       	and	r24, r24
+ 230:	19 f0       	breq	.+6      	; 0x238 <main+0x48>
+ 232:	d0 93 68 00 	sts	0x0068, r29	; 0x800068 <_upFire>
+ 236:	25 c0       	rjmp	.+74     	; 0x282 <main+0x92>
+ 238:	6d e6       	ldi	r22, 0x6D	; 109
+ 23a:	70 e0       	ldi	r23, 0x00	; 0
+ 23c:	8c e1       	ldi	r24, 0x1C	; 28
+ 23e:	67 df       	rcall	.-306    	; 0x10e <_Z16incrementCounterhPVh>
+ 240:	81 11       	cpse	r24, r1
+ 242:	f7 cf       	rjmp	.-18     	; 0x232 <main+0x42>
+ 244:	6c e6       	ldi	r22, 0x6C	; 108
+ 246:	70 e0       	ldi	r23, 0x00	; 0
+ 248:	8c e9       	ldi	r24, 0x9C	; 156
+ 24a:	61 df       	rcall	.-318    	; 0x10e <_Z16incrementCounterhPVh>
+ 24c:	88 23       	and	r24, r24
+ 24e:	19 f0       	breq	.+6      	; 0x256 <main+0x66>
+ 250:	d0 93 67 00 	sts	0x0067, r29	; 0x800067 <_downFire>
+ 254:	16 c0       	rjmp	.+44     	; 0x282 <main+0x92>
+ 256:	6b e6       	ldi	r22, 0x6B	; 107
+ 258:	70 e0       	ldi	r23, 0x00	; 0
+ 25a:	89 e9       	ldi	r24, 0x99	; 153
+ 25c:	58 df       	rcall	.-336    	; 0x10e <_Z16incrementCounterhPVh>
+ 25e:	81 11       	cpse	r24, r1
+ 260:	f7 cf       	rjmp	.-18     	; 0x250 <main+0x60>
+ 262:	6a e6       	ldi	r22, 0x6A	; 106
+ 264:	70 e0       	ldi	r23, 0x00	; 0
+ 266:	84 ee       	ldi	r24, 0xE4	; 228
+ 268:	52 df       	rcall	.-348    	; 0x10e <_Z16incrementCounterhPVh>
+ 26a:	88 23       	and	r24, r24
+ 26c:	19 f0       	breq	.+6      	; 0x274 <main+0x84>
+ 26e:	d0 93 66 00 	sts	0x0066, r29	; 0x800066 <_muteOnFire>
+ 272:	07 c0       	rjmp	.+14     	; 0x282 <main+0x92>
+ 274:	69 e6       	ldi	r22, 0x69	; 105
+ 276:	70 e0       	ldi	r23, 0x00	; 0
+ 278:	81 ee       	ldi	r24, 0xE1	; 225
+ 27a:	49 df       	rcall	.-366    	; 0x10e <_Z16incrementCounterhPVh>
+ 27c:	81 11       	cpse	r24, r1
+ 27e:	d0 93 65 00 	sts	0x0065, r29	; 0x800065 <_muteOffFire>
+ 282:	80 91 68 00 	lds	r24, 0x0068	; 0x800068 <_upFire>
+ 286:	88 23       	and	r24, r24
+ 288:	51 f0       	breq	.+20     	; 0x29e <main+0xae>
+ 28a:	c1 11       	cpse	r28, r1
+ 28c:	08 c0       	rjmp	.+16     	; 0x29e <main+0xae>
+ 28e:	10 92 68 00 	sts	0x0068, r1	; 0x800068 <_upFire>
+ 292:	c2 9a       	sbi	0x18, 2	; 24
+ 294:	9e df       	rcall	.-196    	; 0x1d2 <_Z11doIncrementv>
+ 296:	80 91 64 00 	lds	r24, 0x0064	; 0x800064 <_volumeLevel>
+ 29a:	8f 5f       	subi	r24, 0xFF	; 255
+ 29c:	0d c0       	rjmp	.+26     	; 0x2b8 <main+0xc8>
+ 29e:	80 91 67 00 	lds	r24, 0x0067	; 0x800067 <_downFire>
+ 2a2:	88 23       	and	r24, r24
+ 2a4:	61 f0       	breq	.+24     	; 0x2be <main+0xce>
+ 2a6:	c1 11       	cpse	r28, r1
+ 2a8:	0a c0       	rjmp	.+20     	; 0x2be <main+0xce>
+ 2aa:	10 92 67 00 	sts	0x0067, r1	; 0x800067 <_downFire>
+ 2ae:	c2 98       	cbi	0x18, 2	; 24
+ 2b0:	90 df       	rcall	.-224    	; 0x1d2 <_Z11doIncrementv>
+ 2b2:	80 91 64 00 	lds	r24, 0x0064	; 0x800064 <_volumeLevel>
+ 2b6:	81 50       	subi	r24, 0x01	; 1
+ 2b8:	80 93 64 00 	sts	0x0064, r24	; 0x800064 <_volumeLevel>
+ 2bc:	20 c0       	rjmp	.+64     	; 0x2fe <main+0x10e>
+ 2be:	80 91 66 00 	lds	r24, 0x0066	; 0x800066 <_muteOnFire>
+ 2c2:	88 23       	and	r24, r24
+ 2c4:	51 f0       	breq	.+20     	; 0x2da <main+0xea>
+ 2c6:	c1 11       	cpse	r28, r1
+ 2c8:	08 c0       	rjmp	.+16     	; 0x2da <main+0xea>
+ 2ca:	c2 98       	cbi	0x18, 2	; 24
+ 2cc:	c0 91 64 00 	lds	r28, 0x0064	; 0x800064 <_volumeLevel>
+ 2d0:	cc 23       	and	r28, r28
+ 2d2:	a1 f0       	breq	.+40     	; 0x2fc <main+0x10c>
+ 2d4:	7e df       	rcall	.-260    	; 0x1d2 <_Z11doIncrementv>
+ 2d6:	c1 50       	subi	r28, 0x01	; 1
+ 2d8:	fb cf       	rjmp	.-10     	; 0x2d0 <main+0xe0>
+ 2da:	80 91 65 00 	lds	r24, 0x0065	; 0x800065 <_muteOffFire>
+ 2de:	88 23       	and	r24, r24
+ 2e0:	71 f0       	breq	.+28     	; 0x2fe <main+0x10e>
+ 2e2:	c1 11       	cpse	r28, r1
+ 2e4:	02 c0       	rjmp	.+4      	; 0x2ea <main+0xfa>
+ 2e6:	c0 e0       	ldi	r28, 0x00	; 0
+ 2e8:	0a c0       	rjmp	.+20     	; 0x2fe <main+0x10e>
+ 2ea:	c2 9a       	sbi	0x18, 2	; 24
+ 2ec:	c0 e0       	ldi	r28, 0x00	; 0
+ 2ee:	80 91 64 00 	lds	r24, 0x0064	; 0x800064 <_volumeLevel>
+ 2f2:	c8 17       	cp	r28, r24
+ 2f4:	c0 f7       	brcc	.-16     	; 0x2e6 <main+0xf6>
+ 2f6:	6d df       	rcall	.-294    	; 0x1d2 <_Z11doIncrementv>
+ 2f8:	cf 5f       	subi	r28, 0xFF	; 255
+ 2fa:	f9 cf       	rjmp	.-14     	; 0x2ee <main+0xfe>
+ 2fc:	c1 e0       	ldi	r28, 0x01	; 1
+ 2fe:	78 94       	sei
+ 300:	8b cf       	rjmp	.-234    	; 0x218 <main+0x28>
 
-00000304 <_exit>:
- 304:	f8 94       	cli
+00000302 <_exit>:
+ 302:	f8 94       	cli
 
-00000306 <__stop_program>:
- 306:	ff cf       	rjmp	.-2      	; 0x306 <__stop_program>
+00000304 <__stop_program>:
+ 304:	ff cf       	rjmp	.-2      	; 0x304 <__stop_program>
