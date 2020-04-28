@@ -5,15 +5,15 @@
  * Author : Themen
  */ 
 
-#define F_CPU 9600000UL
+#define F_CPU 9600000UL //1200000UL //9600000UL
 #define RX_PIN INT0
-#define ERROR_VALUE 13333UL
+#define ERROR_VALUE 10400UL //1300UL //10400UL
 #define SIZE_OF_DATA 23
 #define LED_PIN PORTB0
 #define SELECTOR_PIN PORTB2 //Громкость вверх или вниз
 #define CONTROL_PIN PORTB3  //Управление громкостью
-#define SHORT_TIME 24000UL
-#define LONG_TIME 45000UL
+#define SHORT_TIME 24000UL //3000UL //24000UL
+#define LONG_TIME 45000UL //5625UL //45000UL
 
 #define UP1_DATA      0b00011001
 #define UP2_DATA      0b00011100
@@ -28,16 +28,17 @@
 
 volatile unsigned long _RXPreviousTime = 0;
 volatile unsigned long _pulseDuration = 0;
-volatile uint8_t _up1Counter = 0;
-volatile uint8_t _up2Counter = 0;
-volatile uint8_t _down1Counter = 0;
-volatile uint8_t _down2Counter = 0;
-volatile uint8_t _muteOnCounter = 0;
-volatile uint8_t _muteOffCounter = 0;
-volatile bool _upFire = false;
-volatile bool _downFire = false;
-volatile bool _muteOnFire = false;
-volatile bool _muteOffFire = false;
+volatile bool _hasPulse = false;
+uint8_t _up1Counter = 0;
+uint8_t _up2Counter = 0;
+uint8_t _down1Counter = 0;
+uint8_t _down2Counter = 0;
+uint8_t _muteOnCounter = 0;
+uint8_t _muteOffCounter = 0;
+bool _upFire = false;
+bool _downFire = false;
+bool _muteOnFire = false;
+bool _muteOffFire = false;
 
 uint8_t _volumeLevel = 0;
 
@@ -46,6 +47,13 @@ volatile unsigned long _timer = 0; //Для нашего случая частота контроллера 9,6 М
 ISR(TIM0_OVF_vect)
 {
 	_timer++;
+}
+
+ISR(INT0_vect)
+{
+	_pulseDuration = _timer - _RXPreviousTime;
+	_RXPreviousTime = _timer;
+	_hasPulse = true;
 }
 
 inline unsigned long getExpectedTime(uint8_t data, uint8_t counter) //В зависимости от значения счётчика и паттерна (data) определяем какой длительности должен быть сигнал.
@@ -91,36 +99,6 @@ bool incrementCounter(uint8_t data, volatile uint8_t *counter) //Увеличиваем счё
 	return false;
 }
 
-ISR(INT0_vect)
-{
-	_pulseDuration = _timer - _RXPreviousTime;
-	_RXPreviousTime = _timer;
-	if (incrementCounter(UP1_DATA, &_up1Counter))
-	{
-		_upFire = true;
-	}
-	else if (incrementCounter(UP2_DATA, &_up2Counter))
-	{
-		_upFire = true;
-	}
-	else if (incrementCounter(DOWN1_DATA, &_down1Counter))
-	{
-		_downFire = true;
-	}
-	else if (incrementCounter(DOWN2_DATA, &_down2Counter))
-	{
-		_downFire = true;
-	}
-	else if (incrementCounter(MUTE_ON_DATA, &_muteOnCounter))
-	{
-		_muteOnFire = true;
-	}
-	else if (incrementCounter(MUTE_OFF_DATA, &_muteOffCounter))
-	{
-		_muteOffFire = true;
-	}
-}
-
 inline void doIncrement()
 {
 	PORTB &= ~(1 << CONTROL_PIN);
@@ -146,49 +124,67 @@ int main(void)
 	PORTB |= (1 << LED_PIN);
 	while (true) 
 	{
-		if (_timer % 150000 == 0)
-		{
-			PORTB ^= (1 << LED_PIN);
-		}
-		if (_upFire && !isMute)
+		if (_hasPulse)
 		{
 			cli();
-			_upFire = false;			
-			PORTB |= (1 << SELECTOR_PIN);
-			doIncrement();
-			_volumeLevel++;
-			sei();
-		}
-		else if (_downFire && !isMute)
-		{
-			cli();
-			_downFire = false;
-			PORTB &= ~(1 << SELECTOR_PIN);
-			doIncrement();
-			_volumeLevel--;
-			sei();
-		}
-		else if (_muteOnFire && !isMute)
-		{
-			cli();
-			isMute = true;
-			PORTB &= ~(1 << SELECTOR_PIN);
-			for (uint8_t i = _volumeLevel; i > 0; i--)
+			_hasPulse = false;
+			if (incrementCounter(UP1_DATA, &_up1Counter))
 			{
+				_upFire = true;
+			}
+			else if (incrementCounter(UP2_DATA, &_up2Counter))
+			{
+				_upFire = true;
+			}
+			else if (incrementCounter(DOWN1_DATA, &_down1Counter))
+			{
+				_downFire = true;
+			}
+			else if (incrementCounter(DOWN2_DATA, &_down2Counter))
+			{
+				_downFire = true;
+			}
+			else if (incrementCounter(MUTE_ON_DATA, &_muteOnCounter))
+			{
+				_muteOnFire = true;
+			}
+			else if (incrementCounter(MUTE_OFF_DATA, &_muteOffCounter))
+			{
+				_muteOffFire = true;
+			}	
+			if (_upFire && !isMute)
+			{
+				_upFire = false;
+				PORTB |= (1 << SELECTOR_PIN);
 				doIncrement();
+				_volumeLevel++;
+			}
+			else if (_downFire && !isMute)
+			{
+				_downFire = false;
+				PORTB &= ~(1 << SELECTOR_PIN);
+				doIncrement();
+				_volumeLevel--;
+			}
+			else if (_muteOnFire && !isMute)
+			{
+				isMute = true;
+				PORTB &= ~(1 << SELECTOR_PIN);
+				for (uint8_t i = _volumeLevel; i > 0; i--)
+				{
+					doIncrement();
+				}
+			}
+			else if (_muteOffFire && isMute)
+			{
+				isMute = false;
+				PORTB |= (1 << SELECTOR_PIN);
+				for (uint8_t i = 0; i < _volumeLevel; i++)
+				{
+					doIncrement();
+				}
 			}
 			sei();
-		}
-		else if (_muteOffFire && isMute)
-		{
-			cli();
-			isMute = false;
-			PORTB |= (1 << SELECTOR_PIN);
-			for (uint8_t i = 0; i < _volumeLevel; i++)
-			{
-				doIncrement();
-			}
-			sei();
-		}
+		}	
 	}
 }
