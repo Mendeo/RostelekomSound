@@ -39,7 +39,8 @@ void onPulse()
   if (incrementCounter(UP1_DATA, &_up1Counter) || incrementCounter(UP2_DATA, &_up2Counter)) _upFire = true;
   if (incrementCounter(DOWN1_DATA, &_down1Counter) || incrementCounter(DOWN2_DATA, &_down2Counter)) _downFire = true;
   if (incrementCounter(MUTE_ON_DATA, &_muteOnCounter)) _muteOnFire = true;
-  if (incrementCounter(MUTE_OFF_DATA, &_muteOffCounter)) _muteOffFire = true;
+  if (incrementCounter(MUTE_OFF_DATA, &_muteOffCounter)) _muteOffFire = true;+
+  Serial.println(_pulseDuration);
 }
 
 inline bool incrementCounter(const unsigned long data[], volatile uint8_t *counter)

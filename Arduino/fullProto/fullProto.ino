@@ -1,11 +1,13 @@
 #define RX_PIN INT0
-#define ERROR_VALUE 32UL //16UL
 #define SIZE_OF_DATA 23
 #define LED_PIN PORTB0
 #define SELECTOR_PIN PORTB2 //Громкость вверх или вниз
 #define CONTROL_PIN PORTB3  //Управление громкостью
-#define SHORT_TIME 56UL //33UL
-#define LONG_TIME 112UL //66UL
+
+#define ERROR_VALUE 32UL //16UL //512 мкс
+#define SHORT_TIME 56UL //33UL //896 мкс
+#define LONG_TIME 112UL //66UL //1792 мкс
+#define PAUSE_TIME 625UL //10000 мкс
 
 #define UP1_DATA      0b00011001
 #define UP2_DATA      0b00011100
@@ -16,6 +18,7 @@
 
 volatile unsigned long _RXPreviousTime = 0;
 volatile unsigned long _pulseDuration = 0;
+volatile uint8_t _rxPinStatus = 0;
 volatile bool _hasPulse = false;
 uint8_t _up1Counter = 0;
 uint8_t _up2Counter = 0;
@@ -42,6 +45,7 @@ void onRecive() //ISR(INT0_vect)
   _pulseDuration = _timer - _RXPreviousTime;
   _RXPreviousTime = _timer;
   _hasPulse = true;
+  _rxPinStatus = digitalRead(2);
 }
 
 inline unsigned long getExpectedTime(uint8_t data, uint8_t counter) //В зависимости от значения счётчика и паттерна (data) определяем какой длительности должен быть сигнал.
@@ -69,9 +73,28 @@ inline unsigned long getExpectedTime(uint8_t data, uint8_t counter) //В зав�
 
 bool incrementCounter(uint8_t data, volatile uint8_t *counter) //Увеличиваем счётчик, если приняли сигнал, который соответствует следующему значению в нашем паттерне (data). Если паттерн получен полностью, то возвращаем true.
 {
-  uint8_t PIN_STATUS = !!(PORTB & (1 << INT0)); //Аналог digitalRead на ардуино.
+  if (_pulseDuration > PAUSE_TIME)
+  {
+    (*counter) = 0;
+    Serial.println("s");
+    return false;
+  }
   unsigned long eTime = getExpectedTime(data, *counter);
-  if ((PIN_STATUS ^ (*counter % 2)) && _pulseDuration >= eTime - ERROR_VALUE && _pulseDuration <= eTime + ERROR_VALUE)
+  //uint8_t PIN_STATUS = !!(PORTB & (1 << INT0)); //Аналог digitalRead на ардуино.
+  //_rxPinStatus = digitalRead(2);
+  Serial.print(_pulseDuration);
+  Serial.print(" ");
+  Serial.print(eTime);
+  Serial.print(" ");
+  Serial.print(*counter);
+  Serial.print(": ");
+  Serial.print(_rxPinStatus);
+  Serial.print(" ");
+  Serial.print(*counter % 2);
+  Serial.print(" ");
+  Serial.print(_rxPinStatus ^ (*counter % 2));
+  Serial.println();
+  if ((_rxPinStatus ^ (*counter % 2)) && _pulseDuration >= eTime - ERROR_VALUE && _pulseDuration <= eTime + ERROR_VALUE)
   {
     (*counter)++;
   }
@@ -97,7 +120,7 @@ inline void doIncrement()
 
 int main(void)
 {
-  Serial.begin(9600);
+  Serial.begin(115200);
   Serial.println("Hello!");
   
   DDRB = (1 << LED_PIN) | (1 << SELECTOR_PIN) | (1 << CONTROL_PIN); //Включаем LED_PIN, SELECTOR_PIN и CONTROL_PIN на выход, остальные на вход.
@@ -119,10 +142,17 @@ int main(void)
   {
     if (_hasPulse)
     {
-      cli();
-      Serial.println(_pulseDuration);
+            _hasPulse = false;
+      //cli();
       
-      _hasPulse = false;
+
+
+        if (incrementCounter(MUTE_ON_DATA, &_muteOnCounter))
+      {
+        _muteOnFire = true;
+      }
+      
+      /*
       if (incrementCounter(UP1_DATA, &_up1Counter))
       {
         _upFire = true;
@@ -146,7 +176,8 @@ int main(void)
       else if (incrementCounter(MUTE_OFF_DATA, &_muteOffCounter))
       {
         _muteOffFire = true;
-      } 
+      }
+      */
       if (_upFire && !isMute)
       {
         _upFire = false;
@@ -179,7 +210,8 @@ int main(void)
           doIncrement();
         }
       }
-      sei();
+
+      //sei();
     } 
   }
 }
