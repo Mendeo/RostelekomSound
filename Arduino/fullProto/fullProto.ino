@@ -30,10 +30,11 @@ bool _upFire = false;
 bool _downFire = false;
 bool _muteOnFire = false;
 bool _muteOffFire = false;
+bool _isMute = false;
 
 uint8_t _volumeLevel = 0;
 
-volatile unsigned long _timer = 0; //Для нашего случая частота контроллера 9,6 МГц, Значит один инкремент переменной _timer случается примерно раз в 26,67 микросекунды.
+volatile unsigned long _timer = 0;
 
 ISR(TIMER0_OVF_vect)
 {
@@ -57,11 +58,11 @@ inline unsigned long getExpectedTime(uint8_t data, uint8_t counter) //В зав�
   }
   else if (counter >= 15 && counter <= 17)
   {
-    index = counter - 15;
+    index = counter - 12;
   }
   else if (counter >= 20 && counter <= 21)
   {
-    index = counter - 20;
+    index = counter - 14;
   }
   else
   {
@@ -76,25 +77,26 @@ bool incrementCounter(uint8_t data, volatile uint8_t *counter) //Увеличи�
   if (_pulseDuration > PAUSE_TIME)
   {
     (*counter) = 0;
-    Serial.println("s");
+    //Serial.println("s");
     return false;
   }
   unsigned long eTime = getExpectedTime(data, *counter);
   //uint8_t PIN_STATUS = !!(PORTB & (1 << INT0)); //Аналог digitalRead на ардуино.
   //_rxPinStatus = digitalRead(2);
+  /*
   Serial.print(_pulseDuration);
   Serial.print(" ");
   Serial.print(eTime);
   Serial.print(" ");
   Serial.print(*counter);
   Serial.print(": ");
-  Serial.print(_rxPinStatus);
+  Serial.println(_rxPinStatus);
   Serial.print(" ");
   Serial.print(*counter % 2);
   Serial.print(" ");
-  Serial.print(_rxPinStatus ^ (*counter % 2));
-  Serial.println();
-  if ((_rxPinStatus ^ (*counter % 2)) && _pulseDuration >= eTime - ERROR_VALUE && _pulseDuration <= eTime + ERROR_VALUE)
+  Serial.print(_rxPinStatus ^ !!(*counter % 2));
+  Serial.println();*/
+  if ((_rxPinStatus ^ !!(*counter % 2)) && _pulseDuration >= eTime - ERROR_VALUE && _pulseDuration <= eTime + ERROR_VALUE)
   {
     (*counter)++;
   }
@@ -136,23 +138,13 @@ int main(void)
   PORTB &= ~(1 << SELECTOR_PIN);
   PORTB |= (1 << CONTROL_PIN);
   sei(); //Разрешаем прерывания.
-  bool isMute = false;
   PORTB |= (1 << LED_PIN);
   while (true) 
   {
     if (_hasPulse)
     {
-            _hasPulse = false;
-      //cli();
-      
-
-
-        if (incrementCounter(MUTE_ON_DATA, &_muteOnCounter))
-      {
-        _muteOnFire = true;
-      }
-      
-      /*
+      _hasPulse = false;
+      //cli();    
       if (incrementCounter(UP1_DATA, &_up1Counter))
       {
         _upFire = true;
@@ -177,37 +169,55 @@ int main(void)
       {
         _muteOffFire = true;
       }
-      */
-      if (_upFire && !isMute)
+
+      if (_upFire)
       {
+        Serial.println("up");
         _upFire = false;
-        PORTB |= (1 << SELECTOR_PIN);
-        doIncrement();
-        _volumeLevel++;
-      }
-      else if (_downFire && !isMute)
-      {
-        _downFire = false;
-        PORTB &= ~(1 << SELECTOR_PIN);
-        doIncrement();
-        _volumeLevel--;
-      }
-      else if (_muteOnFire && !isMute)
-      {
-        isMute = true;
-        PORTB &= ~(1 << SELECTOR_PIN);
-        for (uint8_t i = _volumeLevel; i > 0; i--)
+        if (!_isMute)
         {
+          PORTB |= (1 << SELECTOR_PIN);
           doIncrement();
+          _volumeLevel++;
         }
       }
-      else if (_muteOffFire && isMute)
+      else if (_downFire)
       {
-        isMute = false;
-        PORTB |= (1 << SELECTOR_PIN);
-        for (uint8_t i = 0; i < _volumeLevel; i++)
+        Serial.println("down");
+        _downFire = false;
+        if (!_isMute)
         {
+          PORTB &= ~(1 << SELECTOR_PIN);
           doIncrement();
+          _volumeLevel--;
+        }
+      }
+      else if (_muteOnFire)
+      {
+        Serial.println("muteOn");
+        _muteOnFire = false;
+        if (!_isMute)
+        {
+          _isMute = true;
+          PORTB &= ~(1 << SELECTOR_PIN);
+          for (uint8_t i = _volumeLevel; i > 0; i--)
+          {
+            doIncrement();
+          }
+        }
+      }
+      else if (_muteOffFire)
+      {
+        Serial.println("muteOff");
+        _muteOffFire = false;
+        if (_isMute)
+        {
+          _isMute = false;
+          PORTB |= (1 << SELECTOR_PIN);
+          for (uint8_t i = 0; i < _volumeLevel; i++)
+          {
+            doIncrement();
+          }
         }
       }
 
