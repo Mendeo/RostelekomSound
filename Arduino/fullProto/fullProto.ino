@@ -16,21 +16,22 @@
 #define MUTE_ON_DATA  0b11100100
 #define MUTE_OFF_DATA 0b11100001
 
+#define HAS_PATTERN_START 0b00111111
+
+#define SIZE_OF_PATTERNS 6
+
+#define MAX_VOLUME 100 //10K по 0.1К => всего 100 возможных значений громкости.
+
 volatile unsigned long _RXPreviousTime = 0;
 volatile unsigned long _pulseDuration = 0;
 volatile uint8_t _rxPinStatus = 0;
 volatile bool _hasPulse = false;
-uint8_t _up1Counter = 0;
-uint8_t _up2Counter = 0;
-uint8_t _down1Counter = 0;
-uint8_t _down2Counter = 0;
-uint8_t _muteOnCounter = 0;
-uint8_t _muteOffCounter = 0;
-bool _upFire = false;
-bool _downFire = false;
-bool _muteOnFire = false;
-bool _muteOffFire = false;
+uint8_t _counter = 0;
+uint8_t _hasPattern = HAS_PATTERN_START; //Если время импулься совпадает с ожидаемым значением, то соответствующий бит остаётся равным единицы. Каждый бит соответствует одному из паттернов кнопок пульта.
+uint8_t _currentButton = 255;
 bool _isMute = false;
+
+const uint8_t* PATTERNS[] = {UP1_DATA, UP2_DATA, DOWN1_DATA, DOWN2_DATA, MUTE_ON_DATA, MUTE_OFF_DATA};
 
 uint8_t _volumeLevel = 0;
 
@@ -49,20 +50,20 @@ void onRecive() //ISR(INT0_vect)
   _rxPinStatus = digitalRead(2);
 }
 
-inline unsigned long getExpectedTime(uint8_t data, uint8_t counter) //В зависимости от значения счётчика и паттерна (data) определяем какой длительности должен быть сигнал.
+inline unsigned long getExpectedTime(uint8_t data) //В зависимости от значения счётчика и паттерна (data) определяем какой длительности должен быть сигнал.
 {
   uint8_t index;
-  if (counter >= 2 && counter <= 4)
+  if (_counter >= 2 && _counter <= 4)
   {
-    index = counter - 2;
+    index = _counter - 2;
   }
-  else if (counter >= 15 && counter <= 17)
+  else if (_counter >= 15 && _counter <= 17)
   {
-    index = counter - 12;
+    index = _counter - 12;
   }
-  else if (counter >= 20 && counter <= 21)
+  else if (_counter >= 20 && _counter <= 21)
   {
-    index = counter - 14;
+    index = _counter - 14;
   }
   else
   {
@@ -72,44 +73,81 @@ inline unsigned long getExpectedTime(uint8_t data, uint8_t counter) //В зав�
   return SHORT_TIME;
 }
 
-bool incrementCounter(uint8_t data, volatile uint8_t *counter) //Увеличиваем счётчик, если приняли сигнал, который соответствует следующему значению в нашем паттерне (data). Если паттерн получен полностью, то возвращаем true.
+uint8_t incrementCounter() //Если паттерн получен полностью, то возвращаем номер кнопки в массиве PATTERNS.
 {
   if (_pulseDuration > PAUSE_TIME)
   {
-    (*counter) = 0;
+    _counter = 0;
+    _hasPattern = HAS_PATTERN_START;
     //Serial.println("s");
-    return false;
+    return 255;
   }
-  unsigned long eTime = getExpectedTime(data, *counter);
-  //uint8_t PIN_STATUS = !!(PORTB & (1 << INT0)); //Аналог digitalRead на ардуино.
-  //_rxPinStatus = digitalRead(2);
   /*
-  Serial.print(_pulseDuration);
+  Serial.print(_counter);
   Serial.print(" ");
-  Serial.print(eTime);
-  Serial.print(" ");
-  Serial.print(*counter);
-  Serial.print(": ");
-  Serial.println(_rxPinStatus);
-  Serial.print(" ");
-  Serial.print(*counter % 2);
-  Serial.print(" ");
-  Serial.print(_rxPinStatus ^ !!(*counter % 2));
+  Serial.print(_hasPattern, BIN);
   Serial.println();*/
-  if ((_rxPinStatus ^ !!(*counter % 2)) && _pulseDuration >= eTime - ERROR_VALUE && _pulseDuration <= eTime + ERROR_VALUE)
+  if (_hasPattern)
   {
-    (*counter)++;
+    unsigned long eTime;
+    for (uint8_t i = 0; i < SIZE_OF_PATTERNS; i++)
+    {
+      if (_hasPattern & (1 << i)) //Раньше шаблон совпадал.
+      {
+        eTime = getExpectedTime(PATTERNS[i]);
+        if (!((_rxPinStatus ^ !!(_counter % 2)) && _pulseDuration >= eTime - ERROR_VALUE && _pulseDuration <= eTime + ERROR_VALUE)) //Шаблон не совпадает.
+        {
+          _hasPattern &= ~(1 << i);
+        }
+      }
+    }
+    _counter++;
+    if (_counter == SIZE_OF_DATA)
+    {
+      //Serial.println(_hasPattern);
+      if (_hasPattern) //Какая-то кнопка совпала
+      {
+        switch (_hasPattern)
+        {
+          case 1: return 0;
+          case 2: return 1;
+          case 4: return 2;
+          case 8: return 3;
+          case 16: return 4;
+          case 32: return 5;
+          //Это про запас
+          case 64: return 6;
+          case 128: return 7;
+          default: return 255;
+        }
+      }
+      else
+      {
+        return 255;
+      }
+    }
+    else
+    {
+      return 255; //Пока никакая кнопка не совпала
+    }
   }
   else
   {
-    (*counter) = 0;
+    return 255; //Никакая кнопка не совпала
   }
-  if (*counter == SIZE_OF_DATA)
-  {
-    (*counter) = 0;
-    return true;
-  }
-  return false;
+  /*
+    Serial.print(_pulseDuration);
+    Serial.print(" ");
+    Serial.print(eTime);
+    Serial.print(" ");
+    Serial.print(*counter);
+    Serial.print(": ");
+    Serial.println(_rxPinStatus);
+    Serial.print(" ");
+    Serial.print(*counter % 2);
+    Serial.print(" ");
+    Serial.print(_rxPinStatus ^ !!(*counter % 2));
+    Serial.println();*/
 }
 
 inline void doIncrement()
@@ -124,14 +162,14 @@ int main(void)
 {
   Serial.begin(115200);
   Serial.println("Hello!");
-  
+
   DDRB = (1 << LED_PIN) | (1 << SELECTOR_PIN) | (1 << CONTROL_PIN); //Включаем LED_PIN, SELECTOR_PIN и CONTROL_PIN на выход, остальные на вход.
   //GICR = (1 << INT0); //GIMSK = (1 << INT0); //Настраиваем прерывание на INT0.
   //Настраиваем прерывание по изменению уровня.
   //MCUCR |= (1 << ISC00);
   //MCUCR &= ~(1 << ISC01);
   attachInterrupt(0, onRecive, CHANGE);
-  
+
   TIMSK0 = (1 << TOIE0); //Настраиваем прерывание по переполнению регистра таймера TCNT0.
   TCCR0B = (1 << CS10); //TCCR0B = (1 << CS00); //Настраиваем таймер на работу без делителя частоты.
   //Выставляем начальные значения пинов управления потенциометрами.
@@ -139,89 +177,63 @@ int main(void)
   PORTB |= (1 << CONTROL_PIN);
   sei(); //Разрешаем прерывания.
   PORTB |= (1 << LED_PIN);
-  while (true) 
+  while (true)
   {
     if (_hasPulse)
     {
       _hasPulse = false;
-      //cli();    
-      if (incrementCounter(UP1_DATA, &_up1Counter))
+      _currentButton = incrementCounter();
+      if (_currentButton != 255)
       {
-        _upFire = true;
-      }
-      else if (incrementCounter(UP2_DATA, &_up2Counter))
-      {
-        _upFire = true;
-      }
-      else if (incrementCounter(DOWN1_DATA, &_down1Counter))
-      {
-        _downFire = true;
-      }
-      else if (incrementCounter(DOWN2_DATA, &_down2Counter))
-      {
-        _downFire = true;
-      }
-      else if (incrementCounter(MUTE_ON_DATA, &_muteOnCounter))
-      {
-        _muteOnFire = true;
-      }
-      else if (incrementCounter(MUTE_OFF_DATA, &_muteOffCounter))
-      {
-        _muteOffFire = true;
-      }
-
-      if (_upFire)
-      {
-        Serial.println("up");
-        _upFire = false;
-        if (!_isMute)
+        if ((_currentButton == 0 || _currentButton == 1) && _volumeLevel < MAX_VOLUME) //Нажата кнопка вверх.
         {
-          PORTB |= (1 << SELECTOR_PIN);
-          doIncrement();
-          _volumeLevel++;
-        }
-      }
-      else if (_downFire)
-      {
-        Serial.println("down");
-        _downFire = false;
-        if (!_isMute)
-        {
-          PORTB &= ~(1 << SELECTOR_PIN);
-          doIncrement();
-          _volumeLevel--;
-        }
-      }
-      else if (_muteOnFire)
-      {
-        Serial.println("muteOn");
-        _muteOnFire = false;
-        if (!_isMute)
-        {
-          _isMute = true;
-          PORTB &= ~(1 << SELECTOR_PIN);
-          for (uint8_t i = _volumeLevel; i > 0; i--)
+          if (!_isMute)
           {
+            PORTB |= (1 << SELECTOR_PIN);
             doIncrement();
+            _volumeLevel++;
+          }
+          Serial.print("up ");
+          Serial.println(_volumeLevel);
+        }
+        else if ((_currentButton == 2 || _currentButton == 3) && _volumeLevel > 0) //Нажата кнопка вниз.
+        {
+          if (!_isMute)
+          {
+            PORTB &= ~(1 << SELECTOR_PIN);
+            doIncrement();
+            _volumeLevel--;
+          }
+          Serial.print("down ");
+          Serial.println(_volumeLevel);
+        }
+        else if (_currentButton == 4) //Включение mute.
+        {
+          Serial.println("muteOn");
+          if (!_isMute)
+          {
+            _isMute = true;
+            PORTB &= ~(1 << SELECTOR_PIN);
+            for (uint8_t i = _volumeLevel; i > 0; i--)
+            {
+              doIncrement();
+            }
+          }
+        }
+        else if (_currentButton == 5) //Выключение mute.
+        {
+          Serial.println("muteOff");
+          if (_isMute)
+          {
+            _isMute = false;
+            PORTB |= (1 << SELECTOR_PIN);
+            for (uint8_t i = 0; i < _volumeLevel; i++)
+            {
+              doIncrement();
+            }
           }
         }
       }
-      else if (_muteOffFire)
-      {
-        Serial.println("muteOff");
-        _muteOffFire = false;
-        if (_isMute)
-        {
-          _isMute = false;
-          PORTB |= (1 << SELECTOR_PIN);
-          for (uint8_t i = 0; i < _volumeLevel; i++)
-          {
-            doIncrement();
-          }
-        }
-      }
-
-      //sei();
-    } 
+    }
   }
 }
