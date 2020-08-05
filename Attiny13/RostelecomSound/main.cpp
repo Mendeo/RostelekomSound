@@ -43,16 +43,10 @@ volatile uint8_t _rxPinStatus = 0;
 volatile bool _hasPulse = false;
 uint8_t _counter = 0;
 uint8_t _hasPattern = HAS_PATTERN_START; //Если время импулься совпадает с ожидаемым значением, то соответствующий бит остаётся равным единицы. Каждый бит соответствует одному из паттернов кнопок пульта.
-uint8_t _currentButton = 255;
-bool _isMute = false;
 
 const uint8_t PATTERNS[] = {UP1_DATA, UP2_DATA, DOWN1_DATA, DOWN2_DATA, MUTE_ON_DATA, MUTE_OFF_DATA};
 
-uint8_t _volumeLevel = 0;
-
 volatile unsigned long _timer = 0;
-
-//unsigned long _ledOnTime = 0;
 
 ISR(TIM0_OVF_vect)
 {
@@ -89,18 +83,6 @@ unsigned long getExpectedTime(uint8_t data) //В зависимости от з�
 	if (data & (1 << index)) return LONG_TIME;
 	return SHORT_TIME;
 }
-
-//void checkPattern(pattern, index)
-//{
-	//if (_hasPattern & (1 << i)) //Если раньше шаблон совпадал.
-	//{
-		//eTime = getExpectedTime(PATTERNS[i]);
-		//if (!((_rxPinStatus ^ !!(_counter % 2)) && _pulseDuration >= eTime - ERROR_VALUE && _pulseDuration <= eTime + ERROR_VALUE)) //Шаблон не совпадает.
-		//{
-			//_hasPattern &= ~(1 << i);
-		//}
-	//}
-//}
 
 uint8_t incrementCounter() //Если паттерн получен полностью, то возвращаем номер кнопки в массиве PATTERNS.
 {
@@ -185,60 +167,64 @@ int main(void)
 
 	sei(); //Разрешаем прерывания.
 	PORTB &= ~(1 << LED_PIN);
+	bool isMute = false;
+	uint8_t currentButton = 255;
+	uint8_t volumeLevel = 0;
+	unsigned long ledOnTime = 0;
 	while (true)
 	{
 		//Выключаем светодиод, если он горит уже больше 25 мс
-		//if (_ledOnTime > 0 && _timer - _ledOnTime >= LED_ON_TIME)
-		//{
-			//PORTB &= ~(1 << LED_PIN);
-			//_ledOnTime = 0;
-		//}
+		if (ledOnTime > 0 && _timer - ledOnTime >= LED_ON_TIME)
+		{
+			PORTB &= ~(1 << LED_PIN);
+			ledOnTime = 0;
+		}
 		if (_hasPulse)
 		{
 			_hasPulse = false;
-			_currentButton = incrementCounter();
-			if (_currentButton != 255)
+			currentButton = incrementCounter();
+			if (currentButton != 255)
 			{
 				//Включаем светодиод, если нажата кнопка на пульте.
-				//PORTB |= (1 << LED_PIN);
-				//_ledOnTime = _timer;
-				if ((_currentButton == 0 || _currentButton == 1) && _volumeLevel < MAX_VOLUME) //Нажата кнопка вверх.
+				PORTB |= (1 << LED_PIN);
+				ledOnTime = _timer;
+				if ((currentButton == 0 || currentButton == 1) && volumeLevel < MAX_VOLUME) //Нажата кнопка вверх.
 				{
-					if (!_isMute)
+					if (!isMute)
 					{
 						PORTB |= (1 << SELECTOR_PIN);
 						doIncrement();
-						_volumeLevel++;
+						volumeLevel++;
 					}
 				}
-				else if ((_currentButton == 2 || _currentButton == 3) && _volumeLevel > 0) //Нажата кнопка вниз.
+				else if ((currentButton == 2 || currentButton == 3) && volumeLevel > 0) //Нажата кнопка вниз.
 				{
-					if (!_isMute)
+					if (!isMute)
 					{
 						PORTB &= ~(1 << SELECTOR_PIN);
 						doIncrement();
-						_volumeLevel--;
+						volumeLevel--;
 					}
 				}
-				else if (_currentButton == 4) //Включение mute.
+				else if (currentButton == 4) //Включение mute.
 				{
-					if (!_isMute)
+					if (!isMute)
 					{
-						_isMute = true;
+						isMute = true;
 						PORTB &= ~(1 << SELECTOR_PIN);
-						for (uint8_t i = _volumeLevel; i > 0; i--)
+						for (uint8_t i = volumeLevel; i > 0; i--)
 						{
 							doIncrement();
 						}
 					}
 				}
-				else if (_currentButton == 5) //Выключение mute.
+				else if (currentButton == 5) //Выключение mute.
 				{
-					if (_isMute)
+					if (isMute)
 					{
-						_isMute = false;
+						isMute = false;
 						PORTB |= (1 << SELECTOR_PIN);
-						for (uint8_t i = 0; i < _volumeLevel; i++)
+						for (uint8_t i = 0; i < volumeLevel; i++)
 						{
 							doIncrement();
 						}
