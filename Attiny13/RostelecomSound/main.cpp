@@ -67,7 +67,7 @@ ISR(INT0_vect)
 	_rxPinStatus = !!(PINB & (1 << RX_PIN));
 }
 
-inline unsigned long getExpectedTime(uint8_t data) //В зависимости от значения счётчика и паттерна (data) определяем какой длительности должен быть сигнал.
+unsigned long getExpectedTime(uint8_t data) //В зависимости от значения счётчика и паттерна (data) определяем какой длительности должен быть сигнал.
 {
 	uint8_t index;
 	if (_counter >= 2 && _counter <= 4)
@@ -90,7 +90,19 @@ inline unsigned long getExpectedTime(uint8_t data) //В зависимости �
 	return SHORT_TIME;
 }
 
-inline uint8_t incrementCounter() //Если паттерн получен полностью, то возвращаем номер кнопки в массиве PATTERNS.
+//void checkPattern(pattern, index)
+//{
+	//if (_hasPattern & (1 << i)) //Если раньше шаблон совпадал.
+	//{
+		//eTime = getExpectedTime(PATTERNS[i]);
+		//if (!((_rxPinStatus ^ !!(_counter % 2)) && _pulseDuration >= eTime - ERROR_VALUE && _pulseDuration <= eTime + ERROR_VALUE)) //Шаблон не совпадает.
+		//{
+			//_hasPattern &= ~(1 << i);
+		//}
+	//}
+//}
+
+uint8_t incrementCounter() //Если паттерн получен полностью, то возвращаем номер кнопки в массиве PATTERNS.
 {
 	if (_pulseDuration > PAUSE_TIME)
 	{
@@ -148,7 +160,7 @@ inline uint8_t incrementCounter() //Если паттерн получен по�
 	}
 }
 
-inline void doIncrement()
+void doIncrement()
 {
 	PORTB &= ~(1 << CONTROL_PIN);
 	_delay_ms(1);
