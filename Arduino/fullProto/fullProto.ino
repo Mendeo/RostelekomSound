@@ -8,14 +8,14 @@
 #define LONG_TIME 112UL //66UL //1792 мкс
 #define PAUSE_TIME 625UL //10000 мкс
 
+#define LED_ON_TIME 1562 //25 мс
+
 #define UP1_DATA      0b00011001
 #define UP2_DATA      0b00011100
 #define DOWN1_DATA    0b10011100
 #define DOWN2_DATA    0b10011001
 #define MUTE_ON_DATA  0b11100100
 #define MUTE_OFF_DATA 0b11100001
-
-#define LED_ON_TIME 1562 //25 мс
 
 #define HAS_PATTERN_START 0b00111111
 
@@ -164,7 +164,7 @@ int main(void)
   while (true)
   {
     //Выключаем светодиод, если он горит уже больше 25 мс
-    if (_ledOnTime > 0 && _timer - _ledOnTime >= 1562)
+    if (_ledOnTime > 0 && _timer - _ledOnTime >= LED_ON_TIME)
     {
       PORTB &= ~(1 << LED_PIN);
       _ledOnTime = 0;
