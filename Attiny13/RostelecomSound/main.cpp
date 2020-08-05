@@ -6,14 +6,23 @@
  */ 
 
 #define F_CPU 9600000UL //1200000UL //9600000UL
-#define RX_PIN INT0
-#define ERROR_VALUE 16UL //1300UL //10400UL
+
+#include <avr/io.h>
+#include <avr/interrupt.h>
+#include <util/delay.h>
+
 #define SIZE_OF_DATA 23
 #define LED_PIN PORTB0
-#define SELECTOR_PIN PORTB2 //Громкость вверх или вниз
-#define CONTROL_PIN PORTB3  //Управление громкостью
-#define SHORT_TIME 33UL //3000UL //24000UL
-#define LONG_TIME 66UL //5625UL //45000UL
+#define SELECTOR_PIN PORTB2 //Р“СЂРѕРјРєРѕСЃС‚СЊ РІРІРµСЂС… РёР»Рё РІРЅРёР·
+#define CONTROL_PIN PORTB3  //РЈРїСЂР°РІР»РµРЅРёРµ РіСЂРѕРјРєРѕСЃС‚СЊСЋ
+#define RX_PIN INT0
+
+#define ERROR_VALUE 19UL
+#define SHORT_TIME 33UL
+#define LONG_TIME 67UL
+#define PAUSE_TIME 375UL //10000 РјРєСЃ
+
+#define LED_ON_TIME 1562 //25 РјСЃ
 
 #define UP1_DATA      0b00011001
 #define UP2_DATA      0b00011100
@@ -22,27 +31,28 @@
 #define MUTE_ON_DATA  0b11100100
 #define MUTE_OFF_DATA 0b11100001
 
-#include <avr/io.h>
-#include <avr/interrupt.h>
-#include <util/delay.h>
+#define HAS_PATTERN_START 0b00111111
+
+#define SIZE_OF_PATTERNS 6
+
+#define MAX_VOLUME 100 //10K РїРѕ 0.1Рљ => РІСЃРµРіРѕ 100 РІРѕР·РјРѕР¶РЅС‹С… Р·РЅР°С‡РµРЅРёР№ РіСЂРѕРјРєРѕСЃС‚Рё.
 
 volatile unsigned long _RXPreviousTime = 0;
 volatile unsigned long _pulseDuration = 0;
+volatile uint8_t _rxPinStatus = 0;
 volatile bool _hasPulse = false;
-uint8_t _up1Counter = 0;
-uint8_t _up2Counter = 0;
-uint8_t _down1Counter = 0;
-uint8_t _down2Counter = 0;
-uint8_t _muteOnCounter = 0;
-uint8_t _muteOffCounter = 0;
-bool _upFire = false;
-bool _downFire = false;
-bool _muteOnFire = false;
-bool _muteOffFire = false;
+uint8_t _counter = 0;
+uint8_t _hasPattern = HAS_PATTERN_START; //Р•СЃР»Рё РІСЂРµРјСЏ РёРјРїСѓР»СЊСЃСЏ СЃРѕРІРїР°РґР°РµС‚ СЃ РѕР¶РёРґР°РµРјС‹Рј Р·РЅР°С‡РµРЅРёРµРј, С‚Рѕ СЃРѕРѕС‚РІРµС‚СЃС‚РІСѓСЋС‰РёР№ Р±РёС‚ РѕСЃС‚Р°С‘С‚СЃСЏ СЂР°РІРЅС‹Рј РµРґРёРЅРёС†С‹. РљР°Р¶РґС‹Р№ Р±РёС‚ СЃРѕРѕС‚РІРµС‚СЃС‚РІСѓРµС‚ РѕРґРЅРѕРјСѓ РёР· РїР°С‚С‚РµСЂРЅРѕРІ РєРЅРѕРїРѕРє РїСѓР»СЊС‚Р°.
+uint8_t _currentButton = 255;
+bool _isMute = false;
+
+const uint8_t PATTERNS[] = {UP1_DATA, UP2_DATA, DOWN1_DATA, DOWN2_DATA, MUTE_ON_DATA, MUTE_OFF_DATA};
 
 uint8_t _volumeLevel = 0;
 
-volatile unsigned long _timer = 0; //Для нашего случая частота контроллера 9,6 МГц, Значит один инкремент переменной _timer случается примерно раз в 26,67 микросекунды.
+volatile unsigned long _timer = 0;
+
+//unsigned long _ledOnTime = 0;
 
 ISR(TIM0_OVF_vect)
 {
@@ -54,22 +64,23 @@ ISR(INT0_vect)
 	_pulseDuration = _timer - _RXPreviousTime;
 	_RXPreviousTime = _timer;
 	_hasPulse = true;
+	_rxPinStatus = !!(PINB & (1 << RX_PIN));
 }
 
-inline unsigned long getExpectedTime(uint8_t data, uint8_t counter) //В зависимости от значения счётчика и паттерна (data) определяем какой длительности должен быть сигнал.
+inline unsigned long getExpectedTime(uint8_t data) //Р’ Р·Р°РІРёСЃРёРјРѕСЃС‚Рё РѕС‚ Р·РЅР°С‡РµРЅРёСЏ СЃС‡С‘С‚С‡РёРєР° Рё РїР°С‚С‚РµСЂРЅР° (data) РѕРїСЂРµРґРµР»СЏРµРј РєР°РєРѕР№ РґР»РёС‚РµР»СЊРЅРѕСЃС‚Рё РґРѕР»Р¶РµРЅ Р±С‹С‚СЊ СЃРёРіРЅР°Р».
 {
 	uint8_t index;
-	if (counter >= 2 && counter <= 4)
+	if (_counter >= 2 && _counter <= 4)
 	{
-		index = counter - 2;
+		index = _counter - 2;
 	}
-	else if (counter >= 15 && counter <= 17)
+	else if (_counter >= 15 && _counter <= 17)
 	{
-		index = counter - 15;
+		index = _counter - 12;
 	}
-	else if (counter >= 20 && counter <= 21)
+	else if (_counter >= 20 && _counter <= 21)
 	{
-		index = counter - 20;
+		index = _counter - 14;
 	}
 	else
 	{
@@ -79,24 +90,62 @@ inline unsigned long getExpectedTime(uint8_t data, uint8_t counter) //В зависимо
 	return SHORT_TIME;
 }
 
-bool incrementCounter(uint8_t data, volatile uint8_t *counter) //Увеличиваем счётчик, если приняли сигнал, который соответствует следующему значению в нашем паттерне (data). Если паттерн получен полностью, то возвращаем true.
+inline uint8_t incrementCounter() //Р•СЃР»Рё РїР°С‚С‚РµСЂРЅ РїРѕР»СѓС‡РµРЅ РїРѕР»РЅРѕСЃС‚СЊСЋ, С‚Рѕ РІРѕР·РІСЂР°С‰Р°РµРј РЅРѕРјРµСЂ РєРЅРѕРїРєРё РІ РјР°СЃСЃРёРІРµ PATTERNS.
 {
-	uint8_t PIN_STATUS = !!(PORTB & (1 << INT0)); //Аналог digitalRead на ардуино.
-	unsigned long eTime = getExpectedTime(data, *counter);
-	if ((PIN_STATUS ^ (*counter % 2)) && _pulseDuration >= eTime - ERROR_VALUE && _pulseDuration <= eTime + ERROR_VALUE)
+	if (_pulseDuration > PAUSE_TIME)
 	{
-		(*counter)++;
+		_counter = 0;
+		_hasPattern = HAS_PATTERN_START;
+		return 255;
+	}
+	if (_hasPattern)
+	{
+		unsigned long eTime;
+		for (uint8_t i = 0; i < SIZE_OF_PATTERNS; i++)
+		{
+			if (_hasPattern & (1 << i)) //Р•СЃР»Рё СЂР°РЅСЊС€Рµ С€Р°Р±Р»РѕРЅ СЃРѕРІРїР°РґР°Р».
+			{
+				eTime = getExpectedTime(PATTERNS[i]);
+				if (!((_rxPinStatus ^ !!(_counter % 2)) && _pulseDuration >= eTime - ERROR_VALUE && _pulseDuration <= eTime + ERROR_VALUE)) //РЁР°Р±Р»РѕРЅ РЅРµ СЃРѕРІРїР°РґР°РµС‚.
+				{
+					_hasPattern &= ~(1 << i);
+				}
+			}
+		}
+		_counter++;
+		if (_counter == SIZE_OF_DATA)
+		{
+			if (_hasPattern) //РљР°РєР°СЏ-С‚Рѕ РєРЅРѕРїРєР° СЃРѕРІРїР°Р»Р°
+			{
+				
+				switch (_hasPattern)
+				{
+					case 1: return 0;
+					case 2: return 1;
+					case 4: return 2;
+					case 8: return 3;
+					case 16: return 4;
+					case 32: return 5;
+					//Р­С‚Рѕ РїСЂРѕ Р·Р°РїР°СЃ
+					//case 64: return 6;
+					//case 128: return 7;
+					default: return 255;
+				}
+			}
+			else
+			{
+				return 255;
+			}
+		}
+		else
+		{
+			return 255; //РџРѕРєР° РЅРёРєР°РєР°СЏ РєРЅРѕРїРєР° РЅРµ СЃРѕРІРїР°Р»Р°
+		}
 	}
 	else
 	{
-		(*counter) = 0;
+		return 255; //РќРёРєР°РєР°СЏ РєРЅРѕРїРєР° РЅРµ СЃРѕРІРїР°Р»Р°
 	}
-	if (*counter == SIZE_OF_DATA)
-	{
-		(*counter) = 0;
-		return true;
-	}
-	return false;
 }
 
 inline void doIncrement()
@@ -109,82 +158,81 @@ inline void doIncrement()
 
 int main(void)
 {
-	DDRB = (1 << LED_PIN) | (1 << SELECTOR_PIN) | (1 << CONTROL_PIN); //Включаем LED_PIN, SELECTOR_PIN и CONTROL_PIN на выход, остальные на вход.
-	GIMSK = (1 << INT0); //Настраиваем прерывание на INT0 (PB1).
-	//Настраиваем прерывание по изменению уровня.
+	DDRB = (1 << LED_PIN) | (1 << SELECTOR_PIN) | (1 << CONTROL_PIN); //Р’РєР»СЋС‡Р°РµРј LED_PIN, SELECTOR_PIN Рё CONTROL_PIN РЅР° РІС‹С…РѕРґ, РѕСЃС‚Р°Р»СЊРЅС‹Рµ РЅР° РІС…РѕРґ.
+	GIMSK = (1 << INT0); //РќР°СЃС‚СЂР°РёРІР°РµРј РїСЂРµСЂС‹РІР°РЅРёРµ РЅР° INT0.
+	//РќР°СЃС‚СЂР°РёРІР°РµРј РїСЂРµСЂС‹РІР°РЅРёРµ РїРѕ РёР·РјРµРЅРµРЅРёСЋ СѓСЂРѕРІРЅСЏ.
 	MCUCR |= (1 << ISC00);
-	MCUCR &= ~(1 << ISC01);	
-	TIMSK0 = (1 << TOIE0); //Настраиваем прерывание по переполнению регистра таймера TCNT0.
-	TCCR0B = (1 << CS00); //Настраиваем таймер на работу без делителя частоты.
-	//Выставляем начальные значения пинов управления потенциометрами.
+	MCUCR &= ~(1 << ISC01);
+
+	TIMSK0 = (1 << TOIE0); //РќР°СЃС‚СЂР°РёРІР°РµРј РїСЂРµСЂС‹РІР°РЅРёРµ РїРѕ РїРµСЂРµРїРѕР»РЅРµРЅРёСЋ СЂРµРіРёСЃС‚СЂР° С‚Р°Р№РјРµСЂР° TCNT0.
+	TCCR0B = (1 << CS00); //РќР°СЃС‚СЂР°РёРІР°РµРј С‚Р°Р№РјРµСЂ РЅР° СЂР°Р±РѕС‚Сѓ Р±РµР· РґРµР»РёС‚РµР»СЏ С‡Р°СЃС‚РѕС‚С‹.
+
+	//Р’С‹СЃС‚Р°РІР»СЏРµРј РЅР°С‡Р°Р»СЊРЅС‹Рµ Р·РЅР°С‡РµРЅРёСЏ РїРёРЅРѕРІ СѓРїСЂР°РІР»РµРЅРёСЏ РїРѕС‚РµРЅС†РёРѕРјРµС‚СЂР°РјРё.
 	PORTB &= ~(1 << SELECTOR_PIN);
 	PORTB |= (1 << CONTROL_PIN);
-	sei(); //Разрешаем прерывания.
-	bool isMute = false;
-	PORTB |= (1 << LED_PIN);
-	while (true) 
+
+	sei(); //Р Р°Р·СЂРµС€Р°РµРј РїСЂРµСЂС‹РІР°РЅРёСЏ.
+	PORTB &= ~(1 << LED_PIN);
+	while (true)
 	{
+		//Р’С‹РєР»СЋС‡Р°РµРј СЃРІРµС‚РѕРґРёРѕРґ, РµСЃР»Рё РѕРЅ РіРѕСЂРёС‚ СѓР¶Рµ Р±РѕР»СЊС€Рµ 25 РјСЃ
+		//if (_ledOnTime > 0 && _timer - _ledOnTime >= LED_ON_TIME)
+		//{
+			//PORTB &= ~(1 << LED_PIN);
+			//_ledOnTime = 0;
+		//}
 		if (_hasPulse)
 		{
-			cli();
 			_hasPulse = false;
-			if (incrementCounter(UP1_DATA, &_up1Counter))
+			_currentButton = incrementCounter();
+			if (_currentButton != 255)
 			{
-				_upFire = true;
-			}
-			else if (incrementCounter(UP2_DATA, &_up2Counter))
-			{
-				_upFire = true;
-			}
-			else if (incrementCounter(DOWN1_DATA, &_down1Counter))
-			{
-				_downFire = true;
-			}
-			else if (incrementCounter(DOWN2_DATA, &_down2Counter))
-			{
-				_downFire = true;
-			}
-			else if (incrementCounter(MUTE_ON_DATA, &_muteOnCounter))
-			{
-				_muteOnFire = true;
-			}
-			else if (incrementCounter(MUTE_OFF_DATA, &_muteOffCounter))
-			{
-				_muteOffFire = true;
-			}	
-			if (_upFire && !isMute)
-			{
-				_upFire = false;
-				PORTB |= (1 << SELECTOR_PIN);
-				doIncrement();
-				_volumeLevel++;
-			}
-			else if (_downFire && !isMute)
-			{
-				_downFire = false;
-				PORTB &= ~(1 << SELECTOR_PIN);
-				doIncrement();
-				_volumeLevel--;
-			}
-			else if (_muteOnFire && !isMute)
-			{
-				isMute = true;
-				PORTB &= ~(1 << SELECTOR_PIN);
-				for (uint8_t i = _volumeLevel; i > 0; i--)
+				//Р’РєР»СЋС‡Р°РµРј СЃРІРµС‚РѕРґРёРѕРґ, РµСЃР»Рё РЅР°Р¶Р°С‚Р° РєРЅРѕРїРєР° РЅР° РїСѓР»СЊС‚Рµ.
+				//PORTB |= (1 << LED_PIN);
+				//_ledOnTime = _timer;
+				if ((_currentButton == 0 || _currentButton == 1) && _volumeLevel < MAX_VOLUME) //РќР°Р¶Р°С‚Р° РєРЅРѕРїРєР° РІРІРµСЂС….
 				{
-					doIncrement();
+					if (!_isMute)
+					{
+						PORTB |= (1 << SELECTOR_PIN);
+						doIncrement();
+						_volumeLevel++;
+					}
+				}
+				else if ((_currentButton == 2 || _currentButton == 3) && _volumeLevel > 0) //РќР°Р¶Р°С‚Р° РєРЅРѕРїРєР° РІРЅРёР·.
+				{
+					if (!_isMute)
+					{
+						PORTB &= ~(1 << SELECTOR_PIN);
+						doIncrement();
+						_volumeLevel--;
+					}
+				}
+				else if (_currentButton == 4) //Р’РєР»СЋС‡РµРЅРёРµ mute.
+				{
+					if (!_isMute)
+					{
+						_isMute = true;
+						PORTB &= ~(1 << SELECTOR_PIN);
+						for (uint8_t i = _volumeLevel; i > 0; i--)
+						{
+							doIncrement();
+						}
+					}
+				}
+				else if (_currentButton == 5) //Р’С‹РєР»СЋС‡РµРЅРёРµ mute.
+				{
+					if (_isMute)
+					{
+						_isMute = false;
+						PORTB |= (1 << SELECTOR_PIN);
+						for (uint8_t i = 0; i < _volumeLevel; i++)
+						{
+							doIncrement();
+						}
+					}
 				}
 			}
-			else if (_muteOffFire && isMute)
-			{
-				isMute = false;
-				PORTB |= (1 << SELECTOR_PIN);
-				for (uint8_t i = 0; i < _volumeLevel; i++)
-				{
-					doIncrement();
-				}
-			}
-			sei();
-		}	
+		}
 	}
 }

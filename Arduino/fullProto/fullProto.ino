@@ -1,4 +1,3 @@
-#define RX_PIN INT0
 #define SIZE_OF_DATA 23
 #define LED_PIN PORTB0
 #define SELECTOR_PIN PORTB2 //Громкость вверх или вниз
@@ -16,6 +15,8 @@
 #define MUTE_ON_DATA  0b11100100
 #define MUTE_OFF_DATA 0b11100001
 
+#define LED_ON_TIME 1562 //25 мс
+
 #define HAS_PATTERN_START 0b00111111
 
 #define SIZE_OF_PATTERNS 6
@@ -31,11 +32,13 @@ uint8_t _hasPattern = HAS_PATTERN_START; //Если время импулься 
 uint8_t _currentButton = 255;
 bool _isMute = false;
 
-const uint8_t* PATTERNS[] = {UP1_DATA, UP2_DATA, DOWN1_DATA, DOWN2_DATA, MUTE_ON_DATA, MUTE_OFF_DATA};
+const uint8_t PATTERNS[] = {UP1_DATA, UP2_DATA, DOWN1_DATA, DOWN2_DATA, MUTE_ON_DATA, MUTE_OFF_DATA};
 
 uint8_t _volumeLevel = 0;
 
 volatile unsigned long _timer = 0;
+
+unsigned long _ledOnTime = 0;
 
 ISR(TIMER0_OVF_vect)
 {
@@ -47,7 +50,7 @@ void onRecive() //ISR(INT0_vect)
   _pulseDuration = _timer - _RXPreviousTime;
   _RXPreviousTime = _timer;
   _hasPulse = true;
-  _rxPinStatus = digitalRead(2);
+  _rxPinStatus = !!(PIND & (1 << PD2)); //в Attiny13 PINB //digitalRead(2);
 }
 
 inline unsigned long getExpectedTime(uint8_t data) //В зависимости от значения счётчика и паттерна (data) определяем какой длительности должен быть сигнал.
@@ -82,11 +85,6 @@ uint8_t incrementCounter() //Если паттерн получен полнос
     //Serial.println("s");
     return 255;
   }
-  /*
-  Serial.print(_counter);
-  Serial.print(" ");
-  Serial.print(_hasPattern, BIN);
-  Serial.println();*/
   if (_hasPattern)
   {
     unsigned long eTime;
@@ -104,7 +102,6 @@ uint8_t incrementCounter() //Если паттерн получен полнос
     _counter++;
     if (_counter == SIZE_OF_DATA)
     {
-      //Serial.println(_hasPattern);
       if (_hasPattern) //Какая-то кнопка совпала
       {
         switch (_hasPattern)
@@ -135,19 +132,6 @@ uint8_t incrementCounter() //Если паттерн получен полнос
   {
     return 255; //Никакая кнопка не совпала
   }
-  /*
-    Serial.print(_pulseDuration);
-    Serial.print(" ");
-    Serial.print(eTime);
-    Serial.print(" ");
-    Serial.print(*counter);
-    Serial.print(": ");
-    Serial.println(_rxPinStatus);
-    Serial.print(" ");
-    Serial.print(*counter % 2);
-    Serial.print(" ");
-    Serial.print(_rxPinStatus ^ !!(*counter % 2));
-    Serial.println();*/
 }
 
 inline void doIncrement()
@@ -164,7 +148,7 @@ int main(void)
   Serial.println("Hello!");
 
   DDRB = (1 << LED_PIN) | (1 << SELECTOR_PIN) | (1 << CONTROL_PIN); //Включаем LED_PIN, SELECTOR_PIN и CONTROL_PIN на выход, остальные на вход.
-  //GICR = (1 << INT0); //GIMSK = (1 << INT0); //Настраиваем прерывание на INT0.
+  //GIMSK = (1 << INT0); //Настраиваем прерывание на INT0.
   //Настраиваем прерывание по изменению уровня.
   //MCUCR |= (1 << ISC00);
   //MCUCR &= ~(1 << ISC01);
@@ -176,15 +160,24 @@ int main(void)
   PORTB &= ~(1 << SELECTOR_PIN);
   PORTB |= (1 << CONTROL_PIN);
   sei(); //Разрешаем прерывания.
-  PORTB |= (1 << LED_PIN);
+  PORTB &= ~(1 << LED_PIN);
   while (true)
   {
+    //Выключаем светодиод, если он горит уже больше 25 мс
+    if (_ledOnTime > 0 && _timer - _ledOnTime >= 1562)
+    {
+      PORTB &= ~(1 << LED_PIN);
+      _ledOnTime = 0;
+    }
     if (_hasPulse)
     {
       _hasPulse = false;
       _currentButton = incrementCounter();
       if (_currentButton != 255)
       {
+        //Включаем светодиод, если нажата кнопка на пульте.
+        PORTB |= (1 << LED_PIN);
+        _ledOnTime = _timer;
         if ((_currentButton == 0 || _currentButton == 1) && _volumeLevel < MAX_VOLUME) //Нажата кнопка вверх.
         {
           if (!_isMute)
