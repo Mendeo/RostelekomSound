@@ -164,7 +164,11 @@ int main(void)
 	//Выставляем начальные значения пинов управления потенциометрами.
 	PORTB &= ~(1 << SELECTOR_PIN);
 	PORTB |= (1 << CONTROL_PIN);
-
+	//Делаем громкость равной нулю.
+	for (uint8_t i = MAX_VOLUME; i > 0; i--)
+	{
+		doIncrement();
+	}
 	sei(); //Разрешаем прерывания.
 	PORTB &= ~(1 << LED_PIN);
 	bool isMute = false;
