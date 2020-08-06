@@ -22,7 +22,7 @@
 #define LONG_TIME 67UL
 #define PAUSE_TIME 375UL //10000 мкс
 
-#define LED_ON_TIME 1562 //25 мс
+#define LED_ON_TIME 938UL //25 мс
 
 #define UP1_DATA      0b00011001
 #define UP2_DATA      0b00011100
