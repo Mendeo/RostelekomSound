@@ -15,7 +15,7 @@
 #define LED_PIN PORTB0
 #define SELECTOR_PIN PORTB2 //Громкость вверх или вниз
 #define CONTROL_PIN PORTB3  //Управление громкостью
-#define RX_PIN INT0
+#define RX_PIN PORTB1
 
 #define ERROR_VALUE 19UL
 #define SHORT_TIME 33UL
