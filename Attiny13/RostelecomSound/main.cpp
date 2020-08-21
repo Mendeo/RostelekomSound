@@ -28,8 +28,8 @@
 #define UP2_DATA      0b00011100
 #define DOWN1_DATA    0b10011100
 #define DOWN2_DATA    0b10011001
-#define MUTE_ON_DATA  0b11100100
-#define MUTE_OFF_DATA 0b11100001
+#define MUTE_1_DATA   0b11100100
+#define MUTE_2_DATA   0b11100001
 
 #define HAS_PATTERN_START 0b00111111
 
@@ -44,7 +44,7 @@ volatile bool _hasPulse = false;
 uint8_t _counter = 0;
 uint8_t _hasPattern = HAS_PATTERN_START; //Если время импулься совпадает с ожидаемым значением, то соответствующий бит остаётся равным единицы. Каждый бит соответствует одному из паттернов кнопок пульта.
 
-const uint8_t PATTERNS[] = {UP1_DATA, UP2_DATA, DOWN1_DATA, DOWN2_DATA, MUTE_ON_DATA, MUTE_OFF_DATA};
+const uint8_t PATTERNS[] = {UP1_DATA, UP2_DATA, DOWN1_DATA, DOWN2_DATA, MUTE_1_DATA, MUTE_2_DATA};
 
 volatile unsigned long _timer = 0;
 
@@ -210,28 +210,22 @@ int main(void)
 						volumeLevel--;
 					}
 				}
-				else if (currentButton == 4) //Включение mute.
+				else if ((currentButton == 4 || currentButton == 5) && !isMute) //Включение mute.
 				{
-					if (!isMute)
+					isMute = true;
+					PORTB &= ~(1 << SELECTOR_PIN);
+					for (uint8_t i = volumeLevel; i > 0; i--)
 					{
-						isMute = true;
-						PORTB &= ~(1 << SELECTOR_PIN);
-						for (uint8_t i = volumeLevel; i > 0; i--)
-						{
-							doIncrement();
-						}
+						doIncrement();
 					}
 				}
-				else if (currentButton == 5) //Выключение mute.
+				else if ((currentButton == 4 || currentButton == 5) && isMute) //Выключение mute.
 				{
-					if (isMute)
+					isMute = false;
+					PORTB |= (1 << SELECTOR_PIN);
+					for (uint8_t i = 0; i < volumeLevel; i++)
 					{
-						isMute = false;
-						PORTB |= (1 << SELECTOR_PIN);
-						for (uint8_t i = 0; i < volumeLevel; i++)
-						{
-							doIncrement();
-						}
+						doIncrement();
 					}
 				}
 			}
