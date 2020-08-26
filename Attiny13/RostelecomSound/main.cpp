@@ -58,7 +58,7 @@ ISR(INT0_vect)
 	_pulseDuration = _timer - _RXPreviousTime;
 	_RXPreviousTime = _timer;
 	_hasPulse = true;
-	_rxPinStatus = !!(PINB & (1 << RX_PIN));
+	_rxPinStatus = !!(PINB & (1 << RX_PIN)); //Аналог digitalRead на Ардуино.
 }
 
 unsigned long getExpectedTime(uint8_t data) //В зависимости от значения счётчика и паттерна (data) определяем какой длительности должен быть сигнал.
