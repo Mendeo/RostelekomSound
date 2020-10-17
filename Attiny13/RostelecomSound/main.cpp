@@ -17,6 +17,13 @@
 #define CONTROL_PIN PORTB3  //Управление громкостью
 #define RX_PIN PORTB1
 
+#define UP1_BT 0
+#define UP2_BT 1
+#define DOWN1_BT 2
+#define DOWN2_BT 3
+#define MUTE_ON_BT 4
+#define MUTE_OFF_BT 5
+
 #define ERROR_VALUE 19UL
 #define SHORT_TIME 33UL
 #define LONG_TIME 67UL
@@ -28,8 +35,8 @@
 #define UP2_DATA      0b00011100
 #define DOWN1_DATA    0b10011100
 #define DOWN2_DATA    0b10011001
-#define MUTE_1_DATA   0b11100100
-#define MUTE_2_DATA   0b11100001
+#define MUTE_ON_DATA   0b11100100
+#define MUTE_OFF_DATA   0b11100001
 
 #define HAS_PATTERN_START 0b00111111
 
@@ -44,7 +51,8 @@ volatile bool _hasPulse = false;
 uint8_t _counter = 0;
 uint8_t _hasPattern = HAS_PATTERN_START; //Если время импулься совпадает с ожидаемым значением, то соответствующий бит остаётся равным единицы. Каждый бит соответствует одному из паттернов кнопок пульта.
 
-const uint8_t PATTERNS[] = {UP1_DATA, UP2_DATA, DOWN1_DATA, DOWN2_DATA, MUTE_1_DATA, MUTE_2_DATA};
+//Индекс паттернов в массиве должен быть в соответствии со значениями: UP1_BT, UP2_BT, DOWN1_DATA, DOWN2_DATA, MUTE1_DATA, MUTE2_BT
+const uint8_t PATTERNS[] = {UP1_DATA, UP2_DATA, DOWN1_DATA, DOWN2_DATA, MUTE_ON_DATA, MUTE_OFF_DATA};
 
 volatile unsigned long _timer = 0;
 
@@ -114,12 +122,12 @@ uint8_t incrementCounter() //Если паттерн получен полнос
 				
 				switch (_hasPattern)
 				{
-					case 1: return 0;
-					case 2: return 1;
-					case 4: return 2;
-					case 8: return 3;
-					case 16: return 4;
-					case 32: return 5;
+					case 1: return UP1_BT;
+					case 2: return UP2_BT;
+					case 4: return DOWN1_BT;
+					case 8: return DOWN2_BT;
+					case 16: return MUTE_ON_BT;
+					case 32: return MUTE_OFF_BT;
 					//Это про запас
 					//case 64: return 6;
 					//case 128: return 7;
@@ -192,7 +200,7 @@ int main(void)
 				//Включаем светодиод, если нажата кнопка на пульте.
 				PORTB |= (1 << LED_PIN);
 				ledOnTime = _timer;
-				if ((currentButton == 0 || currentButton == 1) && volumeLevel < MAX_VOLUME) //Нажата кнопка вверх.
+				if ((currentButton == UP1_BT || currentButton == UP2_BT) && volumeLevel < MAX_VOLUME) //Нажата кнопка вверх.
 				{
 					if (!isMute)
 					{
@@ -201,7 +209,7 @@ int main(void)
 						volumeLevel++;
 					}
 				}
-				else if ((currentButton == 2 || currentButton == 3) && volumeLevel > 0) //Нажата кнопка вниз.
+				else if ((currentButton == DOWN1_BT || currentButton == DOWN2_BT) && volumeLevel > 0) //Нажата кнопка вниз.
 				{
 					if (!isMute)
 					{
@@ -210,7 +218,7 @@ int main(void)
 						volumeLevel--;
 					}
 				}
-				else if ((currentButton == 4 || currentButton == 5) && !isMute) //Включение mute.
+				else if (currentButton == MUTE_ON_BT && !isMute) //Включение mute.
 				{
 					isMute = true;
 					PORTB &= ~(1 << SELECTOR_PIN);
@@ -219,7 +227,7 @@ int main(void)
 						doIncrement();
 					}
 				}
-				else if ((currentButton == 4 || currentButton == 5) && isMute) //Выключение mute.
+				else if (currentButton == MUTE_OFF_BT && isMute) //Выключение mute.
 				{
 					isMute = false;
 					PORTB |= (1 << SELECTOR_PIN);
