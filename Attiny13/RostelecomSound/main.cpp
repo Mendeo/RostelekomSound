@@ -51,7 +51,7 @@ volatile bool _hasPulse = false;
 uint8_t _counter = 0;
 uint8_t _hasPattern = HAS_PATTERN_START; //Если время импулься совпадает с ожидаемым значением, то соответствующий бит остаётся равным единицы. Каждый бит соответствует одному из паттернов кнопок пульта.
 
-//Индекс паттернов в массиве должен быть в соответствии со значениями: UP1_BT, UP2_BT, DOWN1_DATA, DOWN2_DATA, MUTE1_DATA, MUTE2_BT
+//Индекс паттернов в массиве должен быть в соответствии со значениями: UP1_BT, UP2_BT, DOWN1_DATA, DOWN2_DATA, MUTE_ON_BT, MUTE_OFF_BT
 const uint8_t PATTERNS[] = {UP1_DATA, UP2_DATA, DOWN1_DATA, DOWN2_DATA, MUTE_ON_DATA, MUTE_OFF_DATA};
 
 volatile unsigned long _timer = 0;
